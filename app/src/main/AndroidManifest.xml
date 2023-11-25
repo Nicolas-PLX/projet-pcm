@@ -13,6 +13,16 @@
         android:theme="@style/Theme.Projetpcm"
         tools:targetApi="31">
         <activity
+            android:name=".GestionDatabaseActivity"
+            android:exported="false"
+            android:label="@string/title_activity_gestion_database"
+            android:theme="@style/Theme.Projetpcm" />
+        <activity
+            android:name=".GameActivity"
+            android:exported="false"
+            android:label="@string/title_activity_game"
+            android:theme="@style/Theme.Projetpcm" />
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
