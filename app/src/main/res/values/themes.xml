@@ -2,4 +2,11 @@
 <resources>
 
     <style name="Theme.Projetpcm" parent="android:Theme.Material.Light.NoActionBar" />
+    <string-array name="theme_array">
+        <item>Japonais</item>
+        <item>Français</item>
+        <item>Anglais</item>
+        <item>Maths</item>
+        <item>Dates</item>
+    </string-array>
 </resources>
