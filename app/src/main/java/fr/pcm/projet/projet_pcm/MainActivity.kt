@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -80,9 +81,9 @@ fun menuDemarrage(){
         //content = { centreMenu() }, //Je l'ai commenté car sinon ça marchait pas
         bottomBar = { BottomBar(navController)}){ padding ->
         NavHost(navController = navController, startDestination = "home", modifier = Modifier.padding(padding)){
-            composable("home"){} //Mettre ici la fonction pour l'écran principale
-            composable("jouer"){ GameScreen()}
-            composable("modifier"){ GestionDatabaseScreen() }
+            composable("home"){ centreMenu(padding)} //Mettre ici la fonction pour l'écran principale
+            composable("jouer"){ GameScreen(padding)}
+            composable("modifier"){ GestionDatabaseScreen(padding) }
         }
     }
 }
@@ -95,7 +96,7 @@ fun BottomBar(navController: NavHostController) = BottomNavigation{
     BottomNavigationItem(
         selected = currentRoute == "home",
         onClick = { navController.navigate("home") },
-        icon = { /*TODO*/ })
+        icon = { })
     BottomNavigationItem(
         selected = currentRoute == "jouer",
         onClick = { navController.navigate("jouer") },
@@ -131,7 +132,7 @@ fun TopBarPrincipal() = // Dans l'idéal, ici mettre le nom du jeu ou je sais pa
 
 
 @Composable
-fun centreMenu(){
+fun centreMenu(padding : PaddingValues){
     Column (
         modifier = Modifier
             .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
@@ -155,12 +156,12 @@ fun centreMenu(){
 
 //Composable pour l'onglet "Jouer"
 @Composable
-fun GameScreen(model: GameModel = GameModel()){
+fun GameScreen(padding : PaddingValues, model: GameModel = GameModel()){
 
 }
 
 //Composable pour l'onglet "Modifier"
 @Composable
-fun GestionDatabaseScreen(model: GestionDatabaseModel = GestionDatabaseModel()){
+fun GestionDatabaseScreen(padding : PaddingValues, model: GestionDatabaseModel = GestionDatabaseModel()){
 
 }
