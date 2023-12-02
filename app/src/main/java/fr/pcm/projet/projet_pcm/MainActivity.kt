@@ -177,7 +177,7 @@ fun centreMenu(padding : PaddingValues,navController: NavHostController){
 
 //Composable pour l'onglet "Jouer"
 @Composable
-fun GameScreen(padding : PaddingValues, model: GameModel = GameModel()){
+fun GameScreen(padding : PaddingValues, model: GameModel = viewModel()){
     val context = LocalContext.current
     val themes = LocalContext.current.resources.getStringArray(R.array.theme_array)
     var selected by remember {mutableStateOf("")}
