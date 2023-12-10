@@ -6,7 +6,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Theme::class, Japonais::class], version = 1)
+@Database(entities = [Theme::class, JeuDeQuestions::class, Question::class], version = 1)
 abstract class BD : RoomDatabase() {
     abstract fun dao(): Dao
     companion object{
