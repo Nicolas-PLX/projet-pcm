@@ -2,11 +2,12 @@ package fr.pcm.projet.projet_pcm.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 
 //Chaque question est associé à un jeu de questions
-@Entity(foreignKeys = [ ForeignKey(entity = JeuDeQuestions::class, parentColumns = ["id"], childColumns = ["idJeuDeQuestions"], onDelete = ForeignKey.CASCADE)] )
+@Entity(foreignKeys = [ ForeignKey(entity = JeuDeQuestions::class, parentColumns = ["id"], childColumns = ["idJeuDeQuestions"], onDelete = ForeignKey.CASCADE)], indices = [Index("idJeuDeQuestions")] )
 data class Question(
     @PrimaryKey(autoGenerate = true) val id: Int,
     val idJeuDeQuestions: Int,

@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 
 
 @Dao
-interface Dao{
+interface DaoDB{
     @Insert(onConflict = ABORT)
     suspend fun insertTheme(theme:Theme)
 
@@ -30,6 +30,6 @@ interface Dao{
     fun loadJDQName(n:String):List<String>
 
     //La liste des questions, réponses et statuts de d'un jeu de questions
-    @Query("SELECT question, reponse, statut FROM Question WHERE idJeuDeQuestions=:idJDK")
+    @Query("SELECT * FROM Question WHERE idJeuDeQuestions=:idJDK")
     fun loadAllQuestion(idJDK:Int): Flow<List<Question>>
 }
