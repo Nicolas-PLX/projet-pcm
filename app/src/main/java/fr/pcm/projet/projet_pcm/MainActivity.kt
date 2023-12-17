@@ -3,6 +3,7 @@ package fr.pcm.projet.projet_pcm
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.ArrayAdapter
+import android.widget.Space
 import android.widget.Spinner
 import android.widget.Toolbar
 import androidx.activity.ComponentActivity
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
@@ -40,6 +44,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +68,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import fr.pcm.projet.projet_pcm.data.Theme
 import fr.pcm.projet.projet_pcm.GameModel
 import fr.pcm.projet.projet_pcm.ui.theme.ProjetpcmTheme
 
@@ -181,6 +187,7 @@ fun GameScreen(padding : PaddingValues, model: GameModel = viewModel()){
     val context = LocalContext.current
     val themes = LocalContext.current.resources.getStringArray(R.array.theme_array)
     var selected by remember {mutableStateOf("")}
+    val allThemes by model.tousLesThemes.collectAsState(listOf())
     Column(modifier = Modifier
         .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
         .fillMaxSize(),
@@ -198,6 +205,10 @@ fun GameScreen(padding : PaddingValues, model: GameModel = viewModel()){
             items = themeOptions
         )*/
         Text(text = "BONJOUR")
+        Button(onClick = model::remplissageThemes) {
+            Text(text = "Montrer les thèmes")
+        }
+        AfficherListeTheme(allThemes, model::chargerJDQ)
     }
 
 }
@@ -207,3 +218,18 @@ fun GameScreen(padding : PaddingValues, model: GameModel = viewModel()){
 fun GestionDatabaseScreen(padding : PaddingValues, model: GestionDatabaseModel = GestionDatabaseModel()){
 
 }
+
+@Composable
+fun AfficherListeTheme(themes: List<Theme>, jdq : (String) -> Unit) =
+    LazyColumn(
+        Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.5f)){
+        items(themes){
+            Row{
+                Button(onClick = { /*TODO*/}) {
+                    Text(text = it.nom ?: "", fontSize = 30.sp)
+                }
+            }
+        }
+    }

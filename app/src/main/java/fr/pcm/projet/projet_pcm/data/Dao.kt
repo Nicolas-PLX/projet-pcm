@@ -3,19 +3,20 @@ package fr.pcm.projet.projet_pcm.data
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.ABORT
+import androidx.room.OnConflictStrategy.Companion.IGNORE
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 
 @Dao
 interface DaoDB{
-    @Insert(onConflict = ABORT)
+    @Insert(onConflict = IGNORE)
     suspend fun insertTheme(theme:Theme)
 
-    @Insert(onConflict = ABORT)
+    @Insert(onConflict = IGNORE)
     suspend fun insertJeuDeQuestions(jeuDeQuestions:JeuDeQuestions)
 
-    @Insert(onConflict = ABORT)
+    @Insert(onConflict = IGNORE)
     suspend fun insertQuestion(question:Question)
 
     @Query("SELECT * FROM Theme")

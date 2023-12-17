@@ -9,4 +9,15 @@
         <item>Maths</item>
         <item>Dates</item>
     </string-array>
+    <string-array name="jeudequestion_array">
+        <item>1</item>
+        <item>Hiragana</item>
+        <item>Japonais</item>
+        <item>2</item>
+        <item>Katakana</item>
+        <item>Japonais</item>
+        <item>3</item>
+        <item>Kanji</item>
+        <item>Japonais</item>
+    </string-array>
 </resources>

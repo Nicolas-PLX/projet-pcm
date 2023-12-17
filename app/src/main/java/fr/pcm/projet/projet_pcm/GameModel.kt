@@ -16,12 +16,17 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     private val data = (application as GameApplication).database.dao()
 
+    val tousLesThemes=data.loadAllTheme()
+
+    fun chargerJDQ(n:String) {
+        val jdq = data.loadJDQName(n)
+    }
+
     fun remplissageThemes(){
         val list = application.resources.getStringArray((R.array.theme_array))
-        /*viewModelScope.launch(Dispatchers.IO){
+        viewModelScope.launch(Dispatchers.IO){
             for(i in list.indices)
-                //unresolved reference : je sais toujours pas pourquoi
                 data.insertTheme(Theme(nom = list[i]))
-        }*/
+        }
     }
 }
