@@ -10,8 +10,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -33,6 +35,8 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
@@ -186,30 +191,41 @@ fun centreMenu(padding : PaddingValues,navController: NavHostController){
 fun GameScreen(padding : PaddingValues, model: GameModel = viewModel()){
     val context = LocalContext.current
     val themes = LocalContext.current.resources.getStringArray(R.array.theme_array)
-    var selected by remember {mutableStateOf("")}
+    var selectedTheme by remember {mutableStateOf("")}
+    var jdq by remember { mutableStateOf(emptyList<String>()) }
     val allThemes by model.tousLesThemes.collectAsState(listOf())
+    model.remplissageThemes()
     Column(modifier = Modifier
         .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
         .fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally) {
-        /*
-        Spinner(
-            TODO : voir comment faire un bon spinner (les changements de package aident pas ...
-            context = context,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            value = selectedTheme,
-            onValueChange = { selectedTheme = it },
-            items = themeOptions
-        )*/
-        Text(text = "BONJOUR")
-        Button(onClick = model::remplissageThemes) {
-            Text(text = "Montrer les thèmes")
+        Row {
+            Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary)) {
+                var expanded by remember { mutableStateOf(false) }
+                TextButton(onClick = { expanded = true }) { Text("Thème", fontSize = 25.sp) }
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    allThemes.forEach { theme ->
+                        DropdownMenuItem(text = { Text(theme.nom, fontSize = 25.sp) },
+                            onClick = { selectedTheme = theme.nom;expanded = false })
+                    }
+                }
+            }
+            Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary).padding(horizontal = 5.dp)) {
+                var expanded by remember { mutableStateOf(false) }
+                //model.chargerJDQ(selectedTheme)
+                TextButton(onClick = { model.chargerJDQ(selectedTheme)
+                    expanded = true }) { Text("Jeux", fontSize = 25.sp) }
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    jdq.forEach { jd ->
+                        DropdownMenuItem(text = { Text("$jd") },
+                            onClick = { expanded = false })
+                    }
+                }
+            }/**/
         }
-        AfficherListeTheme(allThemes, model::chargerJDQ)
     }
+
 
 }
 
