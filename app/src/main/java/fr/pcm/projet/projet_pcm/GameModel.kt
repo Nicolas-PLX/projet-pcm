@@ -19,14 +19,23 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     private val data = (application as GameApplication).database.dao()
 
     val tousLesThemes=data.loadAllTheme()
-    //val nomQuestion = mutableStateOf("")
-    //var jdq = data.loadJDQName("")
+    var jdq = data.loadJDQName("")
+    var qjdq = data.loadQuestionsFromJDQ("")
 
-    fun chargerJDQ(n:String) {
-        viewModelScope.launch(Dispatchers.IO){
-            //nomQuestion.value = n
-            val jdq = data.loadJDQName(n)
-        }
+
+    fun chargerJDQ(n:String){
+        //viewModelScope.launch(Dispatchers.IO){
+         //   jdq = data.loadJDQName(n)
+
+        //}
+        jdq = data.loadJDQName(n)
+    }
+
+    fun loadQuestionsFromJDQ(n:String){
+        //viewModelScope.launch(Dispatchers.IO){
+        //    qjdq = data.loadQuestionsFromJDQ(n)
+        //}
+        qjdq = data.loadQuestionsFromJDQ(n)
     }
 
     fun remplissageThemes(){

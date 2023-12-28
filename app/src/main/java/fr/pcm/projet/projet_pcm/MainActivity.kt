@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,17 +31,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -98,7 +102,7 @@ class MainActivity : ComponentActivity() {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter") //temporaire
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun menuDemarrage(){
+fun menuDemarrage(model : GameModel = viewModel()){
     val navController = rememberNavController()
     Scaffold(
         topBar = { TopBarPrincipal()},
@@ -106,11 +110,15 @@ fun menuDemarrage(){
         bottomBar = { BottomBar(navController)}){ padding ->
         NavHost(navController = navController, startDestination = "home", modifier = Modifier.padding(padding)){
             composable("home"){ centreMenu(padding,navController)} //Mettre ici la fonction pour l'écran principale
-            composable("jouer"){ GameScreen(padding)}
-            composable("modifier"){ GestionDatabaseScreen(padding) }
+            composable("jouer"){ GameScreen(padding,navController,model)}
+            composable("modifier"){ GestionDatabaseScreen(padding,navController,model)}
+            composable("modifierJDQ"){GestionJDQScreen(padding,navController,model)}
+            composable("modifierQ"){ GestionQScreen(padding,navController,model)}
         }
     }
 }
+
+
 
 /*TODO A finir*/
 @Composable
@@ -188,11 +196,13 @@ fun centreMenu(padding : PaddingValues,navController: NavHostController){
 
 //Composable pour l'onglet "Jouer"
 @Composable
-fun GameScreen(padding : PaddingValues, model: GameModel = viewModel()){
-    val context = LocalContext.current
-    val themes = LocalContext.current.resources.getStringArray(R.array.theme_array)
-    var selectedTheme by remember {mutableStateOf("")}
-    var jdq by remember { mutableStateOf(emptyList<String>()) }
+fun GameScreen(padding : PaddingValues,navController: NavHostController, model: GameModel/* = viewModel()*/){
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    //val context = LocalContext.current
+    //val themes = LocalContext.current.resources.getStringArray(R.array.theme_array)
+    var selectedTheme by remember {mutableStateOf("Thème")}
+    var selectedJDQ by remember { mutableStateOf("Jeux") }
+    val jdq by model.jdq.collectAsState(listOf())
     val allThemes by model.tousLesThemes.collectAsState(listOf())
     model.remplissageThemes()
     Column(modifier = Modifier
@@ -203,7 +213,7 @@ fun GameScreen(padding : PaddingValues, model: GameModel = viewModel()){
         Row {
             Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary)) {
                 var expanded by remember { mutableStateOf(false) }
-                TextButton(onClick = { expanded = true }) { Text("Thème", fontSize = 25.sp) }
+                TextButton(onClick = { expanded = true }) { Text(selectedTheme, fontSize = 25.sp) }
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     allThemes.forEach { theme ->
                         DropdownMenuItem(text = { Text(theme.nom, fontSize = 25.sp) },
@@ -211,41 +221,154 @@ fun GameScreen(padding : PaddingValues, model: GameModel = viewModel()){
                     }
                 }
             }
-            Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary).padding(horizontal = 5.dp)) {
+            Spacer(modifier = Modifier.width(16.dp))
+            Box(modifier = Modifier
+                .border(1.dp, MaterialTheme.colorScheme.primary)
+                .padding(horizontal = 5.dp)) {
                 var expanded by remember { mutableStateOf(false) }
-                //model.chargerJDQ(selectedTheme)
                 TextButton(onClick = { model.chargerJDQ(selectedTheme)
-                    expanded = true }) { Text("Jeux", fontSize = 25.sp) }
+                    expanded = true }) { Text(selectedJDQ, fontSize = 25.sp) }
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     jdq.forEach { jd ->
                         DropdownMenuItem(text = { Text("$jd") },
-                            onClick = { expanded = false })
+                            onClick = {selectedJDQ = jd; expanded = false })
                     }
                 }
-            }/**/
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row {
+            Button(onClick = { navController.navigateUp() }) {
+                Text(text = "Retour")
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Button(onClick = { if (peuJouer(selectedTheme,selectedJDQ)){ /*Todo : lancer une partie */
+
+            } else {
+            }}) {
+                Text("Jouer")
+            }
         }
     }
+}
 
-
+//Fonction qui vérifie si les paramètres de lancement sont corrects, càd s'il y a bien un thème et un jdq qui ont été sélectionné
+fun peuJouer(th : String, jdq : String) : Boolean{
+    return (th != "Thème") && (jdq != "Jeux")
 }
 
 //Composable pour l'onglet "Modifier"
 @Composable
-fun GestionDatabaseScreen(padding : PaddingValues, model: GestionDatabaseModel = GestionDatabaseModel()){
-
+fun GestionDatabaseScreen(padding : PaddingValues,navController: NavHostController, model: GameModel){
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    Column(modifier = Modifier
+        .padding(vertical = 64.dp)
+        .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally)  {
+        Row{
+            Button(onClick = { currentRoute == "modifierJDQ"; navController.navigate("modifierJDQ")}) {Text("Créer / Supprimer un jeu")}
+            Button(onClick = { currentRoute == "modifierQ" ; navController.navigate("modifierQ") }) {Text("Ajouter / Enlever une question")}
+        }
+        Row{
+            Button(onClick = { navController.navigateUp() }) {Text("Retour")}
+        }
+    }
 }
 
+/* Fonction qui s'occupera de modifier (créer ou supprimer) un jeu de question . Il faudra aussi qu'il puisse le télécharger*/
 @Composable
-fun AfficherListeTheme(themes: List<Theme>, jdq : (String) -> Unit) =
-    LazyColumn(
-        Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.5f)){
-        items(themes){
-            Row{
-                Button(onClick = { /*TODO*/}) {
-                    Text(text = it.nom ?: "", fontSize = 30.sp)
+fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,model: GameModel) {
+    TODO("Not yet implemented")
+}
+
+/* Fonction qui s'occupera de modifier (ajouter ou enlever) une question d'un jeu de question. */
+ @Composable
+fun GestionQScreen(padding: PaddingValues, navController: NavHostController, model: GameModel) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    var selectedTheme by remember { mutableStateOf("Thème") }
+    var selectedJDQ by remember { mutableStateOf("Jeux") }
+    var newQuestion by remember {mutableStateOf("")}
+    val jdq by model.jdq.collectAsState(listOf())
+    val allThemes by model.tousLesThemes.collectAsState(listOf())
+    val listeQuestions by model.qjdq.collectAsState(listOf())
+    model.remplissageThemes()
+    Row {
+
+    }
+    Column(
+        modifier = Modifier
+            .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row {
+            Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary)) {
+                var expanded by remember { mutableStateOf(false) }
+                TextButton(onClick = { expanded = true }) { Text(selectedTheme, fontSize = 25.sp) }
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    allThemes.forEach { theme ->
+                        DropdownMenuItem(text = { Text(theme.nom, fontSize = 25.sp) },
+                            onClick = { selectedTheme = theme.nom;expanded = false })
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Box(
+                modifier = Modifier
+                    .border(1.dp, MaterialTheme.colorScheme.primary)
+                    .padding(horizontal = 5.dp)
+            ) {
+                var expanded by remember { mutableStateOf(false) }
+                TextButton(onClick = {
+                    model.chargerJDQ(selectedTheme)
+                    expanded = true
+                }) { Text(selectedJDQ, fontSize = 25.sp) }
+
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    jdq.forEach { jd ->
+                        DropdownMenuItem(text = { Text("$jd") },
+                            onClick = { selectedJDQ = jd; expanded = false })
+                    }
                 }
             }
         }
+        model.loadQuestionsFromJDQ(selectedJDQ)
+        if(selectedJDQ != "Jeux"){ afficherQuestions(liste = listeQuestions)}
+        Row{/*Todo : Récupérer la nouvelle question si l'utilisateur en veut une. */
+           // OutlinedTextField(value = newQuestion, onValueChange = (newQuestion = it)) {
+                
+            //}
+        }
+        Row {
+            Button(onClick = { navController.navigateUp() }) { Text("Retour") }
+        }
     }
+}
+
+@Composable
+fun afficherQuestions(liste : List<String>){
+    if (liste.isEmpty()){
+        Text("La liste est vide")
+    } else {
+        LazyColumn(
+            modifier =
+            Modifier
+                .padding(15.dp)
+                .fillMaxSize(0.8f)
+        ) {
+            items(liste) {
+                Card(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(10.dp)
+                ) { Text(it, fontSize = 36.sp) }
+            }
+        }
+    }
+
+
+}
+

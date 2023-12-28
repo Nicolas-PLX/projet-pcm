@@ -28,7 +28,11 @@ interface DaoDB{
 
     //La liste des noms des jeux de questions pour un thème donné
     @Query("SELECT nom FROM JeuDeQuestions WHERE nomTheme=:n")
-    fun loadJDQName(n:String):List<String>
+    fun loadJDQName(n:String):Flow<List<String>>
+
+    //Selectionne toutes les questions d'un jeu de question de nom n.
+    @Query("SELECT question FROM Question NATURAL JOIN JeuDeQuestions WHERE nom=:n")
+    fun loadQuestionsFromJDQ(n:String):Flow<List<String>>
 
     //La liste des questions, réponses et statuts de d'un jeu de questions
     @Query("SELECT * FROM Question WHERE idJeuDeQuestions=:idJDK")
