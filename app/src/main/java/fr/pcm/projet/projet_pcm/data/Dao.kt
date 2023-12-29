@@ -1,6 +1,7 @@
 package fr.pcm.projet.projet_pcm.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.ABORT
 import androidx.room.OnConflictStrategy.Companion.IGNORE
@@ -30,6 +31,9 @@ interface DaoDB{
     @Query("SELECT nom FROM JeuDeQuestions WHERE nomTheme=:n")
     fun loadJDQName(n:String):Flow<List<String>>
 
+    //Selectionne l'id du jeu de questions de nom n.
+    @Query("SELECT id FROM JeuDeQuestions WHERE nom=:n")
+    fun loadIdJDQ(n:String):Flow<Int>
     //Selectionne toutes les questions d'un jeu de question de nom n.
     @Query("SELECT question FROM Question NATURAL JOIN JeuDeQuestions WHERE nom=:n")
     fun loadQuestionsFromJDQ(n:String):Flow<List<String>>
@@ -37,4 +41,13 @@ interface DaoDB{
     //La liste des questions, réponses et statuts de d'un jeu de questions
     @Query("SELECT * FROM Question WHERE idJeuDeQuestions=:idJDK")
     fun loadAllQuestion(idJDK:Int): Flow<List<Question>>
+
+    //Selectionne toute les questions issu d'une liste de questions (en format chaîne de caractère) pour les mettre sous format Liste de question.
+    @Query("SELECT * FROM Question WHERE question IN (:questions)")
+    suspend fun getQuestionsByContent(questions : List<String>): List<Question>
+
+
+    //Supprime les questions de la base de donnée
+    @Delete
+    suspend fun deleteQuestions(questions: List<Question>)
 }

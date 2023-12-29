@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Space
 import android.widget.Spinner
+import android.widget.Toast
 import android.widget.Toolbar
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -284,15 +285,17 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
 }
 
 /* Fonction qui s'occupera de modifier (ajouter ou enlever) une question d'un jeu de question. */
+@OptIn(ExperimentalMaterial3Api::class)
  @Composable
 fun GestionQScreen(padding: PaddingValues, navController: NavHostController, model: GameModel) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val context = LocalContext.current
     var selectedTheme by remember { mutableStateOf("Thème") }
     var selectedJDQ by remember { mutableStateOf("Jeux") }
-    var newQuestion by remember {mutableStateOf("")}
     val jdq by model.jdq.collectAsState(listOf())
     val allThemes by model.tousLesThemes.collectAsState(listOf())
     val listeQuestions by model.qjdq.collectAsState(listOf())
+    val id by model.idJDQ.collectAsState(initial = 0)
     model.remplissageThemes()
     Row {
 
@@ -336,20 +339,44 @@ fun GestionQScreen(padding: PaddingValues, navController: NavHostController, mod
             }
         }
         model.loadQuestionsFromJDQ(selectedJDQ)
-        if(selectedJDQ != "Jeux"){ afficherQuestions(liste = listeQuestions)}
-        Row{/*Todo : Récupérer la nouvelle question si l'utilisateur en veut une. */
-           // OutlinedTextField(value = newQuestion, onValueChange = (newQuestion = it)) {
-                
-            //}
+        /*if(selectedJDQ != "Jeux"){ */var selectedQuestions = afficherQuestions(liste = listeQuestions)//}
+        var newQuestion by remember {mutableStateOf("")}
+        var newQuestionRep by remember { mutableStateOf("")}
+        Row{
+            Text("Votre question :")
+           OutlinedTextField(value = newQuestion, onValueChange = {newQuestion = it})
+        }
+        Row{
+            Text("Votre réponse :")
+            OutlinedTextField(value = newQuestionRep, onValueChange = {newQuestionRep = it})
         }
         Row {
             Button(onClick = { navController.navigateUp() }) { Text("Retour") }
+
+            Button(onClick = { if(verifAjout(newQuestion,newQuestionRep)){
+                model.loadIdJDQ(selectedJDQ)
+                model.addNewQuestion(newQuestion,newQuestionRep,id)
+                Toast.makeText(context,"Votre question à bien été ajouté.",Toast.LENGTH_LONG).show()
+            }
+            }) {Text("Ajouter")}
+
+            Button(onClick ={if (!selectedQuestions.isEmpty()) {
+                model.deleteQuestions(selectedQuestions.toList())
+                Toast.makeText(context,"Le(s) question(s) ont bien été supprimé.",Toast.LENGTH_LONG).show()
+            } } ){Text("Supprimer")}
         }
     }
 }
 
+fun verifAjout(question : String, reponse : String) : Boolean {
+    return (question != "") && (reponse != "")
+}
+
 @Composable
-fun afficherQuestions(liste : List<String>){
+/*TODO A tester */
+fun afficherQuestions(liste : List<String>) : Set<String>{
+    var selectedQuestions by remember { mutableStateOf<Set<String>>(emptySet()) }
+
     if (liste.isEmpty()){
         Text("La liste est vide")
     } else {
@@ -360,15 +387,23 @@ fun afficherQuestions(liste : List<String>){
                 .fillMaxSize(0.8f)
         ) {
             items(liste) {
+                question -> val selected = selectedQuestions.contains(question)
                 Card(
                     Modifier
                         .fillMaxSize()
                         .padding(10.dp)
-                ) { Text(it, fontSize = 36.sp) }
+                        .clickable{
+                            selectedQuestions = if (selected){
+                                selectedQuestions - question
+                            } else {
+                                selectedQuestions + question
+                            }
+                        }
+                        .background(if(selected) Color.Gray else Color.White)
+                ) { Text(question, fontSize = 36.sp) }
             }
         }
     }
-
-
+    return  selectedQuestions
 }
 
