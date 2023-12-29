@@ -47,7 +47,15 @@ interface DaoDB{
     suspend fun getQuestionsByContent(questions : List<String>): List<Question>
 
 
+    @Query ("SELECT * FROM JeuDeQuestions WHERE nom=:n")
+    suspend fun getJDQbyName(n : String) : JeuDeQuestions
+
+
     //Supprime les questions de la base de donnée
     @Delete
     suspend fun deleteQuestions(questions: List<Question>)
+
+    //Supprime le JDQ de la base de donnée
+    @Delete
+    suspend fun deleteJDQ(jdq : JeuDeQuestions)
 }

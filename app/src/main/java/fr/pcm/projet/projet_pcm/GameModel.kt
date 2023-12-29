@@ -70,4 +70,21 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
             data.deleteQuestions(questionsSuppr)
         }
     }
+
+    suspend fun getJDQByName(jdq : String) : JeuDeQuestions{
+        return data.getJDQbyName(jdq)
+    }
+
+    fun deleteJDQ(jdq : String){
+        viewModelScope.launch(Dispatchers.IO){
+            val jdqSuppr = getJDQByName(jdq)
+            data.deleteJDQ(jdqSuppr)
+        }
+    }
+
+    fun newJDQ(theme : String, jdq : String){
+        viewModelScope.launch(Dispatchers.IO){
+            data.insertJeuDeQuestions(JeuDeQuestions(id = 0,jdq,theme))
+        }
+    }
 }

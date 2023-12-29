@@ -121,7 +121,6 @@ fun menuDemarrage(model : GameModel = viewModel()){
 
 
 
-/*TODO A finir*/
 @Composable
 fun BottomBar(navController: NavHostController) = BottomNavigation{
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -243,7 +242,7 @@ fun GameScreen(padding : PaddingValues,navController: NavHostController, model: 
                 Text(text = "Retour")
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Button(onClick = { if (peuJouer(selectedTheme,selectedJDQ)){ /*Todo : lancer une partie */
+            Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ)){ /*Todo : lancer une partie */
 
             } else {
             }}) {
@@ -254,7 +253,7 @@ fun GameScreen(padding : PaddingValues,navController: NavHostController, model: 
 }
 
 //Fonction qui vérifie si les paramètres de lancement sont corrects, càd s'il y a bien un thème et un jdq qui ont été sélectionné
-fun peuJouer(th : String, jdq : String) : Boolean{
+fun verificationThemeEtJDQ(th : String, jdq : String) : Boolean{
     return (th != "Thème") && (jdq != "Jeux")
 }
 
@@ -281,28 +280,16 @@ fun GestionDatabaseScreen(padding : PaddingValues,navController: NavHostControll
 /* Fonction qui s'occupera de modifier (créer ou supprimer) un jeu de question . Il faudra aussi qu'il puisse le télécharger*/
 @Composable
 fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,model: GameModel) {
-    TODO("Not yet implemented")
-}
-
-/* Fonction qui s'occupera de modifier (ajouter ou enlever) une question d'un jeu de question. */
-@OptIn(ExperimentalMaterial3Api::class)
- @Composable
-fun GestionQScreen(padding: PaddingValues, navController: NavHostController, model: GameModel) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val context = LocalContext.current
     var selectedTheme by remember { mutableStateOf("Thème") }
     var selectedJDQ by remember { mutableStateOf("Jeux") }
     val jdq by model.jdq.collectAsState(listOf())
     val allThemes by model.tousLesThemes.collectAsState(listOf())
-    val listeQuestions by model.qjdq.collectAsState(listOf())
-    val id by model.idJDQ.collectAsState(initial = 0)
     model.remplissageThemes()
-    Row {
-
-    }
     Column(
         modifier = Modifier
-            .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
+            .padding(vertical = 64.dp)
             .fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -329,7 +316,6 @@ fun GestionQScreen(padding: PaddingValues, navController: NavHostController, mod
                     model.chargerJDQ(selectedTheme)
                     expanded = true
                 }) { Text(selectedJDQ, fontSize = 25.sp) }
-
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     jdq.forEach { jd ->
                         DropdownMenuItem(text = { Text("$jd") },
@@ -338,35 +324,132 @@ fun GestionQScreen(padding: PaddingValues, navController: NavHostController, mod
                 }
             }
         }
-        model.loadQuestionsFromJDQ(selectedJDQ)
-        /*if(selectedJDQ != "Jeux"){ */var selectedQuestions = afficherQuestions(liste = listeQuestions)//}
-        var newQuestion by remember {mutableStateOf("")}
-        var newQuestionRep by remember { mutableStateOf("")}
-        Row{
-            Text("Votre question :")
-           OutlinedTextField(value = newQuestion, onValueChange = {newQuestion = it})
-        }
-        Row{
-            Text("Votre réponse :")
-            OutlinedTextField(value = newQuestionRep, onValueChange = {newQuestionRep = it})
+        Spacer(modifier = Modifier.height(16.dp))
+        var newJDQ by remember { mutableStateOf("") }
+        Row {
+            Text("Nom du nouveau jeu :")
+            OutlinedTextField(value = newJDQ, onValueChange = { newJDQ = it })
         }
         Row {
             Button(onClick = { navController.navigateUp() }) { Text("Retour") }
-
-            Button(onClick = { if(verifAjout(newQuestion,newQuestionRep)){
-                model.loadIdJDQ(selectedJDQ)
-                model.addNewQuestion(newQuestion,newQuestionRep,id)
-                Toast.makeText(context,"Votre question à bien été ajouté.",Toast.LENGTH_LONG).show()
+            Button(onClick = {if (newJDQ != "" && selectedTheme != ""){
+                model.newJDQ(selectedTheme,newJDQ)
+                Toast.makeText(context,"Le jeu de question a bien été créé.",Toast.LENGTH_LONG).show()
+            } }) { Text("Créer") }
+            Button(onClick = {if (verificationThemeEtJDQ(selectedTheme,selectedJDQ)){ /* TODO : supprimer aussi les questions qui sont dans le jeu de question*/
+                model.deleteJDQ(selectedJDQ)
+                Toast.makeText(context,"Le jeu de question a bien été supprimé.",Toast.LENGTH_LONG).show()
             }
-            }) {Text("Ajouter")}
-
-            Button(onClick ={if (!selectedQuestions.isEmpty()) {
-                model.deleteQuestions(selectedQuestions.toList())
-                Toast.makeText(context,"Le(s) question(s) ont bien été supprimé.",Toast.LENGTH_LONG).show()
-            } } ){Text("Supprimer")}
+            }) {Text("Supprimer")}
         }
     }
 }
+
+
+    /* Fonction qui s'occupera de modifier (ajouter ou enlever) une question d'un jeu de question. */
+    @Composable
+    fun GestionQScreen(padding: PaddingValues, navController: NavHostController, model: GameModel) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val context = LocalContext.current
+        var selectedTheme by remember { mutableStateOf("Thème") }
+        var selectedJDQ by remember { mutableStateOf("Jeux") }
+        val jdq by model.jdq.collectAsState(listOf())
+        val allThemes by model.tousLesThemes.collectAsState(listOf())
+        val listeQuestions by model.qjdq.collectAsState(listOf())
+        val id by model.idJDQ.collectAsState(initial = 0)
+        model.remplissageThemes()
+        Row {
+            Text(
+                "Si vous souhaitez ajouter une question, veuillez selectionner en premier lieu" +
+                        "un thème, puis un jeu de question. Ensuite, veuillez insérer votre question et sa" +
+                        "réponse, puis presser le bouton.\n" +
+                        "Si vous souhaitez enlever une question, faites de même, puis en affichant la liste" +
+                        "de question déjà existante, cliquer pour sélectionner les questions que vous souhaitez" +
+                        "supprimer, puis presser le bouton correspondant."
+            )
+        }
+        Column(
+            modifier = Modifier
+                .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row {
+                Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary)) {
+                    var expanded by remember { mutableStateOf(false) }
+                    TextButton(onClick = { expanded = true }) {
+                        Text(selectedTheme, fontSize = 25.sp)
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        allThemes.forEach { theme ->
+                            DropdownMenuItem(text = { Text(theme.nom, fontSize = 25.sp) },
+                                onClick = { selectedTheme = theme.nom;expanded = false })
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, MaterialTheme.colorScheme.primary)
+                        .padding(horizontal = 5.dp)
+                ) {
+                    var expanded by remember { mutableStateOf(false) }
+                    TextButton(onClick = {
+                        model.chargerJDQ(selectedTheme)
+                        expanded = true
+                    }) { Text(selectedJDQ, fontSize = 25.sp) }
+
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        jdq.forEach { jd ->
+                            DropdownMenuItem(text = { Text("$jd") },
+                                onClick = { selectedJDQ = jd; expanded = false })
+                        }
+                    }
+                }
+            }
+            model.loadQuestionsFromJDQ(selectedJDQ)
+            var selectedQuestions = afficherQuestions(liste = listeQuestions)
+            var newQuestion by remember { mutableStateOf("") }
+            var newQuestionRep by remember { mutableStateOf("") }
+            Row {
+                Text("Votre question :")
+                OutlinedTextField(value = newQuestion, onValueChange = { newQuestion = it })
+            }
+            Row {
+                Text("Votre réponse :")
+                OutlinedTextField(value = newQuestionRep, onValueChange = { newQuestionRep = it })
+            }
+            Row {
+                Button(onClick = { navController.navigateUp() }) { Text("Retour") }
+
+                Button(onClick = {
+                    if (verifAjout(newQuestion, newQuestionRep)) {
+                        model.loadIdJDQ(selectedJDQ)
+                        model.addNewQuestion(newQuestion, newQuestionRep, id)
+                        Toast.makeText(
+                            context,
+                            "Votre question à bien été ajouté.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }) { Text("Ajouter") }
+
+                Button(onClick = {
+                    if (!selectedQuestions.isEmpty()) {
+                        model.deleteQuestions(selectedQuestions.toList())
+                        Toast.makeText(
+                            context,
+                            "Le(s) question(s) ont bien été enlevé.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }) { Text("Enlever") }
+            }
+        }
+    }
+
+
 
 fun verifAjout(question : String, reponse : String) : Boolean {
     return (question != "") && (reponse != "")
@@ -392,18 +475,19 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
                     Modifier
                         .fillMaxSize()
                         .padding(10.dp)
-                        .clickable{
-                            selectedQuestions = if (selected){
+                        .clickable {
+                            selectedQuestions = if (selected) {
                                 selectedQuestions - question
                             } else {
                                 selectedQuestions + question
                             }
                         }
-                        .background(if(selected) Color.Gray else Color.White)
+                        .background(if (selected) Color.Gray else Color.White)
                 ) { Text(question, fontSize = 36.sp) }
             }
         }
     }
     return  selectedQuestions
 }
+
 
