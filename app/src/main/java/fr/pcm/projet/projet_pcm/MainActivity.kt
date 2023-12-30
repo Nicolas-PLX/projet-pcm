@@ -2,6 +2,7 @@ package fr.pcm.projet.projet_pcm
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.Space
 import android.widget.Spinner
@@ -29,7 +30,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.OutlinedTextField
@@ -56,6 +60,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,12 +72,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -81,6 +88,7 @@ import androidx.navigation.compose.rememberNavController
 import fr.pcm.projet.projet_pcm.data.Theme
 import fr.pcm.projet.projet_pcm.GameModel
 import fr.pcm.projet.projet_pcm.ui.theme.ProjetpcmTheme
+import java.lang.NumberFormatException
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,10 +119,11 @@ fun menuDemarrage(model : GameModel = viewModel()){
         bottomBar = { BottomBar(navController)}){ padding ->
         NavHost(navController = navController, startDestination = "home", modifier = Modifier.padding(padding)){
             composable("home"){ centreMenu(padding,navController)} //Mettre ici la fonction pour l'écran principale
-            composable("jouer"){ GameScreen(padding,navController,model)}
+            composable("jouer"){ DebutGameScreen(padding,navController,model)}
             composable("modifier"){ GestionDatabaseScreen(padding,navController,model)}
             composable("modifierJDQ"){GestionJDQScreen(padding,navController,model)}
             composable("modifierQ"){ GestionQScreen(padding,navController,model)}
+            composable("game"){GameScreen(padding, navController,model)}
         }
     }
 }
@@ -196,10 +205,9 @@ fun centreMenu(padding : PaddingValues,navController: NavHostController){
 
 //Composable pour l'onglet "Jouer"
 @Composable
-fun GameScreen(padding : PaddingValues,navController: NavHostController, model: GameModel/* = viewModel()*/){
+fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, model: GameModel/* = viewModel()*/){
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    //val context = LocalContext.current
-    //val themes = LocalContext.current.resources.getStringArray(R.array.theme_array)
+    val currentRoute = navBackStackEntry?.destination?.route
     var selectedTheme by remember {mutableStateOf("Thème")}
     var selectedJDQ by remember { mutableStateOf("Jeux") }
     val jdq by model.jdq.collectAsState(listOf())
@@ -236,21 +244,64 @@ fun GameScreen(padding : PaddingValues,navController: NavHostController, model: 
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
+        var temps by remember { mutableStateOf("15") }
+        var nbrQuestion by remember { mutableStateOf("10") }
+        Row {
+            OutlinedTextField(value = temps, onValueChange = {temps = it}, label = {Text("Temps (seconde)")},
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+            )
+            OutlinedTextField(value = nbrQuestion, onValueChange = {nbrQuestion = it}, label = {Text("Nombre de questions")},
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+            )
+        }
+        Spacer(modifier = Modifier.height(60.dp))
         Row {
             Button(onClick = { navController.navigateUp() }) {
                 Text(text = "Retour")
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ)){ /*Todo : lancer une partie */
-
-            } else {
+            Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){ /*Todo : lancer une partie */
+                model.temps = temps.toInt() * 1000
+                model.nbQuestion = nbrQuestion.toInt()
+                currentRoute == "game"; navController.navigate("game")
             }}) {
                 Text("Jouer")
             }
         }
     }
 }
+
+fun verifParam(nbr : String, temps : String) : Boolean{
+    return try {
+        val int_nbr = nbr.toInt()
+        val int_time = temps.toInt()
+        int_nbr > 0 && int_time > 0
+    } catch (e : NumberFormatException) {
+        false
+    }
+}
+
+@Composable
+fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel){
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val timer by remember { mutableIntStateOf(model.temps)}
+    val listeQuestion by model.loadQuestions.collectAsState(listOf())
+    Column{
+        Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)){
+            var timerInSeconds = timer / 1000
+            Text("$timerInSeconds", fontSize = 60.sp)
+        }
+    }
+    Column{
+    }
+}
+
 
 //Fonction qui vérifie si les paramètres de lancement sont corrects, càd s'il y a bien un thème et un jdq qui ont été sélectionné
 fun verificationThemeEtJDQ(th : String, jdq : String) : Boolean{
@@ -403,12 +454,12 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         jdq.forEach { jd ->
                             DropdownMenuItem(text = { Text("$jd") },
-                                onClick = { selectedJDQ = jd; expanded = false })
+                                onClick = { selectedJDQ = jd;model.loadQuestionsFromJDQ(selectedJDQ); expanded = false })
                         }
                     }
                 }
             }
-            model.loadQuestionsFromJDQ(selectedJDQ)
+            Spacer(modifier = Modifier.width(16.dp))
             var selectedQuestions = afficherQuestions(liste = listeQuestions)
             var newQuestion by remember { mutableStateOf("") }
             var newQuestionRep by remember { mutableStateOf("") }
@@ -456,7 +507,7 @@ fun verifAjout(question : String, reponse : String) : Boolean {
 }
 
 @Composable
-/*TODO A tester */
+/*TODO : mieux gérer l'affichage */
 fun afficherQuestions(liste : List<String>) : Set<String>{
     var selectedQuestions by remember { mutableStateOf<Set<String>>(emptySet()) }
 
@@ -468,7 +519,12 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
             Modifier
                 .padding(15.dp)
                 .fillMaxSize(0.8f)
+                .height(60.dp)
+
         ) {
+            item {
+                Text("Liste de questions")
+            }
             items(liste) {
                 question -> val selected = selectedQuestions.contains(question)
                 Card(
@@ -483,7 +539,7 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
                             }
                         }
                         .background(if (selected) Color.Gray else Color.White)
-                ) { Text(question, fontSize = 36.sp) }
+                ) { Text(question, fontSize = 15.sp) }
             }
         }
     }

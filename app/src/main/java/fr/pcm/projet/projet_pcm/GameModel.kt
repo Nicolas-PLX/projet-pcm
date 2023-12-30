@@ -19,12 +19,16 @@ import kotlinx.coroutines.launch
 class GameModel(private val application: Application) : AndroidViewModel (application) {
 
     private val data = (application as GameApplication).database.dao()
-
+    /* Chargement de la base de donnée */
     val tousLesThemes=data.loadAllTheme()
     var jdq = data.loadJDQName("")
     var qjdq = data.loadQuestionsFromJDQ("")
     var idJDQ = data.loadIdJDQ("")
+    var loadQuestions = data.getNbrQuestionsFromJDQ(-1,0)
 
+    /*paramétrage de la partie */
+    var temps = 10000 //en milliseconde
+    var nbQuestion = 10 // Nombre de question
 
     fun chargerJDQ(n:String){
         //viewModelScope.launch(Dispatchers.IO){
@@ -38,7 +42,9 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         //viewModelScope.launch(Dispatchers.IO){
         //    qjdq = data.loadQuestionsFromJDQ(n)
         //}
-        qjdq = data.loadQuestionsFromJDQ(n)
+        viewModelScope.launch(Dispatchers.IO){
+            qjdq = data.loadQuestionsFromJDQ(n)
+        }
     }
 
     fun loadIdJDQ(n:String){
@@ -85,6 +91,12 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun newJDQ(theme : String, jdq : String){
         viewModelScope.launch(Dispatchers.IO){
             data.insertJeuDeQuestions(JeuDeQuestions(id = 0,jdq,theme))
+        }
+    }
+
+    fun loadNbrQuestionFromJDQ(idJDQ : Int, nbr : Int){
+        viewModelScope.launch(Dispatchers.IO){
+            loadQuestions = data.getNbrQuestionsFromJDQ(idJDQ,nbr)
         }
     }
 }

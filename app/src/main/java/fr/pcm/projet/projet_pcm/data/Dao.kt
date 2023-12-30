@@ -35,7 +35,7 @@ interface DaoDB{
     @Query("SELECT id FROM JeuDeQuestions WHERE nom=:n")
     fun loadIdJDQ(n:String):Flow<Int>
     //Selectionne toutes les questions d'un jeu de question de nom n.
-    @Query("SELECT question FROM Question NATURAL JOIN JeuDeQuestions WHERE nom=:n")
+    @Query("SELECT question FROM Question JOIN JeuDeQuestions ON Question.idJeuDeQuestions = JeuDeQuestions.id WHERE nom=:n")
     fun loadQuestionsFromJDQ(n:String):Flow<List<String>>
 
     //La liste des questions, réponses et statuts de d'un jeu de questions
@@ -49,6 +49,10 @@ interface DaoDB{
 
     @Query ("SELECT * FROM JeuDeQuestions WHERE nom=:n")
     suspend fun getJDQbyName(n : String) : JeuDeQuestions
+
+    // Requête qui sélectionne un certains nombres de questions issu d'un jeu de question
+    @Query("SELECT * FROM Question WHERE idJeuDeQuestions =:idJDQ ORDER BY RANDOM() LIMIT :nbr")
+    fun getNbrQuestionsFromJDQ(idJDQ : Int, nbr : Int) : Flow<List<Question>>
 
 
     //Supprime les questions de la base de donnée
