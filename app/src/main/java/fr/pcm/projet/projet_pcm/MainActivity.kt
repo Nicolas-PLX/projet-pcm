@@ -69,6 +69,7 @@ import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -88,6 +89,8 @@ import androidx.navigation.compose.rememberNavController
 import fr.pcm.projet.projet_pcm.data.Theme
 import fr.pcm.projet.projet_pcm.GameModel
 import fr.pcm.projet.projet_pcm.ui.theme.ProjetpcmTheme
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.selects.select
 import java.lang.NumberFormatException
 
 class MainActivity : ComponentActivity() {
@@ -123,7 +126,7 @@ fun menuDemarrage(model : GameModel = viewModel()){
             composable("modifier"){ GestionDatabaseScreen(padding,navController,model)}
             composable("modifierJDQ"){GestionJDQScreen(padding,navController,model)}
             composable("modifierQ"){ GestionQScreen(padding,navController,model)}
-            composable("game"){GameScreen(padding, navController,model)}
+            composable("game"){GameScreen(padding, navController,model,model::verifRep)}
         }
     }
 }
@@ -268,6 +271,7 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
             Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){ /*Todo : lancer une partie */
                 model.temps = temps.toInt() * 1000
                 model.nbQuestion = nbrQuestion.toInt()
+                model.jdqGame = selectedJDQ; model.themeGame = selectedTheme
                 currentRoute == "game"; navController.navigate("game")
             }}) {
                 Text("Jouer")
@@ -286,21 +290,36 @@ fun verifParam(nbr : String, temps : String) : Boolean{
     }
 }
 
+/*Je ferai demain je suis fatigué*/
 @Composable
-fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel){
+fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel, verifRep: (String, String) -> Unit){
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val timer by remember { mutableIntStateOf(model.temps)}
-    val listeQuestion by model.loadQuestions.collectAsState(listOf())
+    val listeQuestion = model.loadQuestions.collectAsState(listOf())
+    var rep by remember {mutableStateOf("")}
     Column{
         Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)){
             var timerInSeconds = timer / 1000
             Text("$timerInSeconds", fontSize = 60.sp)
         }
     }
-    Column{
+    Column {
+        var nbrQuestion = model.nbQuestion
+        var i = 0
+        Row {
+            Box(modifier = Modifier.border(1.dp, Color(0.9725f, 0.7961f, 0.8588f), RectangleShape)) {
+                //var question = listeQuestion[i]
+                Text(/*question.question*/"")
+            }
+        }
+        Spacer(modifier = Modifier.height(30.dp))
+        Row {
+            OutlinedTextField(value = rep, onValueChange = {rep = it})
+        }
     }
 }
+
 
 
 //Fonction qui vérifie si les paramètres de lancement sont corrects, càd s'il y a bien un thème et un jdq qui ont été sélectionné

@@ -25,6 +25,8 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var qjdq = data.loadQuestionsFromJDQ("")
     var idJDQ = data.loadIdJDQ("")
     var loadQuestions = data.getNbrQuestionsFromJDQ(-1,0)
+    var themeGame = ""
+    var jdqGame = ""
 
     /*paramétrage de la partie */
     var temps = 10000 //en milliseconde
@@ -97,6 +99,14 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun loadNbrQuestionFromJDQ(idJDQ : Int, nbr : Int){
         viewModelScope.launch(Dispatchers.IO){
             loadQuestions = data.getNbrQuestionsFromJDQ(idJDQ,nbr)
+        }
+    }
+
+    fun verifRep(repUser : String, repQ : String){
+        if (repUser == repQ) {
+            //Incrémenter le niveau de la question
+        } else {
+            // Remettre à 0 le niveau des questions
         }
     }
 }
