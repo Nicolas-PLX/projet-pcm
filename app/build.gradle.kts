@@ -81,5 +81,6 @@ dependencies {
     implementation("androidx.compose.material:material:1.5.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("com.opencsv:opencsv:5.9")
 
 }

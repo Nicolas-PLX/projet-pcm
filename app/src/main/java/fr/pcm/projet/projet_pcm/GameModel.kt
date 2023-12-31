@@ -14,6 +14,9 @@ import fr.pcm.projet.projet_pcm.data.JeuDeQuestions
 import fr.pcm.projet.projet_pcm.data.Question
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.opencsv.CSVReaderBuilder
+import com.opencsv.CSVParserBuilder
+import com.opencsv.enums.CSVReaderNullFieldIndicator
 
 /* Model associé à la Vue du GameActivity */
 class GameModel(private val application: Application) : AndroidViewModel (application) {
@@ -54,11 +57,23 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     }
 
     fun remplissageThemes(){
-        val list = application.resources.getStringArray((R.array.theme_array))
+        /*val list = application.resources.getStringArray((R.array.theme_array))
         viewModelScope.launch(Dispatchers.IO){
             for(i in list.indices)
                 data.insertTheme(Theme(nom = list[i]))
+        }*/
+        val entreeStream = application.resources.openRawResource(R.raw.theme)
+        val csvReader = CSVReaderBuilder(entreeStream.reader())
+            .withCSVParser(CSVParserBuilder().withFieldAsNull(CSVReaderNullFieldIndicator.BOTH).build())
+            .build()
+        csvReader.use{ reader ->
+            val csvThemes = reader.readAll().map { row ->
+                Theme(nom = row[0])
+            }
+
         }
+        // A COMPLETER
+
     }
 
     fun addNewQuestion(question : String, reponse : String, idJDQ : Int){
