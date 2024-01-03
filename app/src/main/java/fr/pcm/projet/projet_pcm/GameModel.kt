@@ -57,23 +57,67 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     }
 
     fun remplissageThemes(){
-        /*val list = application.resources.getStringArray((R.array.theme_array))
-        viewModelScope.launch(Dispatchers.IO){
-            for(i in list.indices)
-                data.insertTheme(Theme(nom = list[i]))
-        }*/
         val entreeStream = application.resources.openRawResource(R.raw.theme)
         val csvReader = CSVReaderBuilder(entreeStream.reader())
             .withCSVParser(CSVParserBuilder().withFieldAsNull(CSVReaderNullFieldIndicator.BOTH).build())
             .build()
         csvReader.use{ reader ->
+            reader.skip(1)
             val csvThemes = reader.readAll().map { row ->
                 Theme(nom = row[0])
             }
-
+            viewModelScope.launch(Dispatchers.IO){
+                data.insertThemesList(csvThemes.map{ it.toTheme()})
+            }
         }
-        // A COMPLETER
+    }
 
+    private fun Theme.toTheme(): Theme {
+        return Theme(nom = this.nom)
+    }
+
+    fun remplissageJDQ(){
+        val entreeStream = application.resources.openRawResource(R.raw.jeudequestions)
+        val csvReader = CSVReaderBuilder(entreeStream.reader())
+            .withCSVParser(CSVParserBuilder().withFieldAsNull(CSVReaderNullFieldIndicator.BOTH).build())
+            .build()
+        csvReader.use{ reader ->
+            reader.skip(1)
+            val csvJDQ = reader.readAll().map { row ->
+                val id = row[0].toIntOrNull() ?: 0
+                JeuDeQuestions(id = id, nom = row[1], nomTheme = row[2])
+            }
+            viewModelScope.launch(Dispatchers.IO){
+                data.insertJeuxDeQuestionsList(csvJDQ.map{ it.toJDQ()})
+            }
+        }
+    }
+
+    private fun JeuDeQuestions.toJDQ(): JeuDeQuestions {
+        return JeuDeQuestions(id = this.id, nom = this.nom, nomTheme = this.nomTheme)
+    }
+
+    fun remplissageQuestions(){
+        val entreeStream = application.resources.openRawResource(R.raw.question)
+        val csvReader = CSVReaderBuilder(entreeStream.reader())
+            .withCSVParser(CSVParserBuilder().withFieldAsNull(CSVReaderNullFieldIndicator.BOTH).build())
+            .build()
+        csvReader.use{ reader ->
+            reader.skip(1)
+            val csvQuestions = reader.readAll().map { row ->
+                val id = row[0].toIntOrNull() ?: 0
+                val idJeuDeQuestions = row[1].toIntOrNull() ?: 0
+                val statut = row[4].toIntOrNull() ?: 0
+                Question(id = id, idJeuDeQuestions = idJeuDeQuestions, question = row[2], reponse = row[3], statut = statut)
+            }
+            viewModelScope.launch(Dispatchers.IO){
+                data.insertQuestionsList(csvQuestions.map{ it.toQuestion()})
+            }
+        }
+    }
+
+    private fun Question.toQuestion(): Question {
+        return Question(id = this.id, idJeuDeQuestions = this.idJeuDeQuestions, question = this.question, reponse = this.reponse, statut = this.statut)
     }
 
     fun addNewQuestion(question : String, reponse : String, idJDQ : Int){

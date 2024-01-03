@@ -15,10 +15,19 @@ interface DaoDB{
     suspend fun insertTheme(theme:Theme)
 
     @Insert(onConflict = IGNORE)
+    suspend fun insertThemesList(themes:List<Theme>)
+
+    @Insert(onConflict = IGNORE)
     suspend fun insertJeuDeQuestions(jeuDeQuestions:JeuDeQuestions)
 
     @Insert(onConflict = IGNORE)
+    suspend fun insertJeuxDeQuestionsList(jeuxDeQuestions:List<JeuDeQuestions>)
+
+    @Insert(onConflict = IGNORE)
     suspend fun insertQuestion(question:Question)
+
+    @Insert(onConflict = IGNORE)
+    suspend fun insertQuestionsList(questions:List<Question>)
 
     @Query("SELECT * FROM Theme")
     fun loadAllTheme(): Flow<List<Theme>>
