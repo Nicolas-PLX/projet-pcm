@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.ABORT
 import androidx.room.OnConflictStrategy.Companion.IGNORE
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 
@@ -71,4 +72,11 @@ interface DaoDB{
     //Supprime le JDQ de la base de donnée
     @Delete
     suspend fun deleteJDQ(jdq : JeuDeQuestions)
+
+    //Selectionne la question de question n
+    @Query ("SELECT * FROM Question WHERE question=:n")
+    suspend fun getQuestion(n : String) : Question
+
+    @Update
+    suspend fun updateQuestion(question : Question)
 }

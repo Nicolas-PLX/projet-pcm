@@ -64,6 +64,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -260,14 +261,14 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
             OutlinedTextField(value = temps, onValueChange = {temps = it}, label = {Text("Temps (seconde)")},
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White)
+                    .padding(end = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)/*,
+                colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White)*/
             )
             OutlinedTextField(value = nbrQuestion, onValueChange = {nbrQuestion = it}, label = {Text("Nombre de questions")},
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White)
+                    .padding(start = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)/*,
+                colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White)*/
             )
         }
         Spacer(modifier = Modifier.height(60.dp))
@@ -277,8 +278,9 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
             }
             Spacer(modifier = Modifier.width(16.dp))
             Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){ /*Todo : lancer une partie */
-                model.temps = temps.toInt() * 1000
-                model.nbQuestion = nbrQuestion.toInt()
+                model.tempsRestant.value = temps.toLong() * 1000
+                model.tempsInitial.value = model.tempsRestant.value
+                model.nbQuestion.value = nbrQuestion.toInt()
                 model.jdqGame = selectedJDQ; model.themeGame = selectedTheme
                 currentRoute == "game"; navController.navigate("game")
             }}) {
@@ -303,7 +305,7 @@ fun verifParam(nbr : String, temps : String) : Boolean{
 fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel, verifRep: (String, String) -> Unit){
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val timer by remember { mutableIntStateOf(model.temps)}
+    val timer by remember { mutableLongStateOf(model.tempsRestant.value)}
     val listeQuestion = model.loadQuestions.collectAsState(listOf())
     var rep by remember {mutableStateOf("")}
     Column{

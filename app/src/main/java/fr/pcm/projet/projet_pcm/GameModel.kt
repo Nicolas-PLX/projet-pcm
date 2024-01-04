@@ -1,8 +1,11 @@
 package fr.pcm.projet.projet_pcm
 
 import android.app.Application
+import android.os.CountDownTimer
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -32,8 +35,12 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var jdqGame = ""
 
     /*paramétrage de la partie */
-    var temps = 10000 //en milliseconde
-    var nbQuestion = 10 // Nombre de question
+    var tempsInitial = mutableLongStateOf(15000) //en milliseconde
+    var tempsRestant = mutableLongStateOf(15000)
+    var nbQuestion = mutableIntStateOf(10) // Nombre de question
+    var badRep = mutableIntStateOf(0)
+    var nbrQuestionRep = mutableIntStateOf(0)
+    private var timer: CountDownTimer? = null
 
     fun chargerJDQ(n:String){
         //viewModelScope.launch(Dispatchers.IO){
@@ -163,9 +170,54 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     fun verifRep(repUser : String, repQ : String){
         if (repUser == repQ) {
-            //Incrémenter le niveau de la question
+            viewModelScope.launch(Dispatchers.IO){
+                incrementQuestion(repUser)
+            }
         } else {
-            // Remettre à 0 le niveau des questions
+            this.badRep.value++
+            viewModelScope.launch(Dispatchers.IO){
+                decrementQuestion(repUser)
+            }
         }
+    }
+
+    suspend fun incrementQuestion(question : String){
+        val q = this.data.getQuestion(question)
+        q.statut = q.statut + 1
+
+        data.updateQuestion(q)
+    }
+
+    suspend fun decrementQuestion(question : String){
+        val q = this.data.getQuestion(question)
+        q.statut = q.statut - 1
+
+        data.updateQuestion(q)
+    }
+
+    fun startTimer(){
+        timer = object : CountDownTimer(tempsRestant.value, 1000){
+            override fun onTick(millisUntilFinished: Long) {
+                tempsRestant.value = millisUntilFinished
+            }
+
+            override fun onFinish() {
+                questionNonRep()
+            }
+        }.start()
+    }
+
+    fun resetTimer(){
+        timer?.cancel()
+        tempsRestant.value = tempsInitial.value
+        startTimer()
+    }
+
+    fun questionNonRep(){
+        badRep.value + 1
+    }
+
+    fun finJeu(){
+        /*Todo Fonction fin de jeu*/
     }
 }

@@ -13,5 +13,5 @@ data class Question(
     val idJeuDeQuestions: Int,
     val question: String,
     val reponse: String,
-    val statut: Int = 1 //Initialisé à 1 par defaut
+    var statut: Int = 1 //Initialisé à 1 par defaut
 )
