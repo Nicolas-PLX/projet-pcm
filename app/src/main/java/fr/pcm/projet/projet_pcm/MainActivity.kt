@@ -10,6 +10,7 @@ import android.widget.Toast
 import android.widget.Toolbar
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -314,15 +315,16 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
     Column {
         var nbrQuestion = model.nbQuestion
         var i = 0
+        Spacer(modifier = Modifier.height(80.dp))
         Row {
-            Box(modifier = Modifier.border(1.dp, Color(0.9725f, 0.7961f, 0.8588f), RectangleShape)) {
+            Box(modifier = Modifier.border(1.dp, Color(0.9725f, 0.7961f, 0.8588f), RectangleShape).padding(horizontal = 10.dp, vertical = 5.dp)) {
                 //var question = listeQuestion[i]
-                Text(/*question.question*/"")
+                Text(/*question.question*/"Test affichage de questions blablabla")
             }
         }
         Spacer(modifier = Modifier.height(30.dp))
         Row {
-            OutlinedTextField(value = rep, onValueChange = {rep = it})
+            OutlinedTextField(value = rep, onValueChange = {rep = it}, colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White))
         }
     }
 }
