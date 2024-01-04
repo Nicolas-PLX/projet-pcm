@@ -40,6 +40,8 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var nbQuestion = mutableIntStateOf(10) // Nombre de question
     var badRep = mutableIntStateOf(0)
     var nbrQuestionRep = mutableIntStateOf(0)
+
+    var questionActuelle : Question? = null
     private var timer: CountDownTimer? = null
 
     fun chargerJDQ(n:String){
@@ -215,9 +217,39 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     fun questionNonRep(){
         badRep.value + 1
+        nbrQuestionRep.value + 1
+        if (nbQuestion.value == nbrQuestionRep.value){
+            finJeu()
+        } else {
+            viewModelScope.launch(Dispatchers.IO){
+                loadQuestions.collect { questions ->
+                    if (questions.isNotEmpty()){
+                        questionActuelle = questions.first()
+                        resetTimer() //Pas sûr
+                    }
+                }
+            }
+        }
+    }
+
+    fun questionRep(){
+        verifRep("","")
+        /* Todo a finir */
     }
 
     fun finJeu(){
         /*Todo Fonction fin de jeu*/
+    }
+
+    fun startJeu(){
+        this.nbrQuestionRep.value = 0
+        tempsRestant.value = tempsInitial.value
+        viewModelScope.launch(Dispatchers.IO){
+            loadQuestions.collect { questions ->
+                if (questions.isNotEmpty()){
+                    questionActuelle = questions.first()
+                }
+            }
+        }
     }
 }
