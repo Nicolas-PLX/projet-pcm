@@ -3,104 +3,85 @@ package fr.pcm.projet.projet_pcm
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
-import android.widget.ArrayAdapter
-import android.widget.Space
-import android.widget.Spinner
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
-import android.widget.Toolbar
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.DismissDirection
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.TextFieldColors
-import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.rememberDismissState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import fr.pcm.projet.projet_pcm.data.Theme
-import fr.pcm.projet.projet_pcm.GameModel
+import fr.pcm.projet.projet_pcm.data.Question
 import fr.pcm.projet.projet_pcm.ui.theme.ProjetpcmTheme
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.selects.select
 import java.lang.NumberFormatException
-import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -304,21 +285,52 @@ fun verifParam(nbr : String, temps : String) : Boolean{
         false
     }
 }
+/* Todo pour moi demain
+Faire la fin d'un jeu (quand il n'y a plus de questions)
+Gérer le bug du timer qui ne se re affiche pas quand on répond à une question (mais qui se reset si on ne repond pas)
+Vérifier que "ma" et "me" sont passé à 1 dans le statut
 
-/*Je ferai demain je suis fatigué*/
+ */
 @Composable
 fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel){
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     var timer by remember { mutableLongStateOf(model.tempsRestant.value)}
-    val listeQuestion = model.loadQuestions.collectAsState(listOf())
     var rep by remember {mutableStateOf("")}
-    var questionAct by remember{ mutableStateOf("")}
     var questionRep by remember { mutableStateOf(false) }
     var isGameRuning by remember { mutableStateOf(false) }
 
 
     var show by remember{mutableStateOf(" ")}
+
+    var repQuestion by remember{ mutableStateOf("") }
+
+    Log.d("TIMER DEBUT","$timer")
+
+    if(timer <= 1000 && isGameRuning == true){
+        isGameRuning = false
+        repQuestion = model.questionActuelle.reponse
+        model.questionNonRep()
+        var GoodOrFalse = model.bonneRep
+        GameScreenAlertDialog(
+            bonneRep = GoodOrFalse,
+            rep = repQuestion,
+            relanceTimer = {model.resetTimer()},
+            reponse = {questionRep = false},
+            refreshRep = {rep = " "}
+        )
+    }
+
+    if (questionRep){
+        var GoodOrFalse = model.bonneRep
+        GameScreenAlertDialog(
+            bonneRep = GoodOrFalse,
+            rep = repQuestion,
+            relanceTimer = {model.resetTimer()},
+            reponse = {questionRep = false},
+            refreshRep = {rep = " "}
+        )
+    }
 
 
     model.loadIdJDQ(model.jdqGame.value)
@@ -353,11 +365,21 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
         Spacer(modifier = Modifier.height(30.dp))
         Row {
             Button(onClick = {
-            model.loadNextQuestions(); isGameRuning = false}){Text("Valider")}
+                repQuestion = model.questionActuelle.reponse
+                Log.d("REP MAIN","$rep")
+                Log.d("QCT MAIN ","${model.questionActuelle.id} | ${model.questionActuelle.question} | ${model.questionActuelle.reponse} | ")
+                model.questionRep(rep,model.questionActuelle.id)
+                Log.d("QCT MAIN ","${model.questionActuelle.id} | ${model.questionActuelle.question} | ${model.questionActuelle.reponse} | ")
+                questionRep = true
+                isGameRuning = false
+                model.cancelTimer()
+                Log.d("QCT MAIN APRES CANCEL","${model.questionActuelle.id} | ${model.questionActuelle.question} | ${model.questionActuelle.reponse} | ")
+
+            }){Text("Valider")}
         }
         Spacer(modifier = Modifier.height(80.dp))
         Row {
-            Button(onClick = {model.startJeu();model.loadNextQuestions()
+            Button(onClick = {model.startJeu();/*model.loadNextQuestions()*/
 
                 isGameRuning = true}) {Text("Start")}
         }
@@ -366,10 +388,49 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
             while (isGameRuning && model.tempsRestant.value > 0){
                 delay(1000)
                 timer = model.tempsRestant.value
+                Log.d("TIMER LAUNCHED","$timer")
             }
         }
     }
 }
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun GameScreenAlertDialog(bonneRep:
+                          Boolean, rep : String,
+                          relanceTimer:() -> Unit,
+                          reponse:() -> Unit,
+                          refreshRep:() -> Unit){
+
+    AlertDialog(
+        text = {
+            if (bonneRep) {
+                Text("Bonne Réponse !")
+            } else {
+                Text("Mauvaise Réponse !\nRéponse : $rep")
+            }
+        },
+        onDismissRequest = {
+            relanceTimer()
+            reponse()
+            refreshRep()
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    relanceTimer()
+                    reponse()
+                    refreshRep()
+                }
+            ) {
+                Text("OK")
+            }
+        }
+    )
+}
+
+
+
 
 
 

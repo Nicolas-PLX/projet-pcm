@@ -63,7 +63,7 @@ interface DaoDB{
 
     // Requête qui sélectionne un certains nombres de questions issu d'un jeu de question. On choisit les
     // questions avec comme statut 1
-    @Query("SELECT * FROM Question JOIN JeuDeQuestions ON Question.idJeuDeQuestions = JeuDeQuestions.id WHERE nom =:nameJDQ AND statut = 1 ORDER BY RANDOM() LIMIT :nbr")
+    @Query("SELECT Question.* FROM Question JOIN JeuDeQuestions ON Question.idJeuDeQuestions = JeuDeQuestions.id WHERE nom =:nameJDQ AND statut = 1 ORDER BY RANDOM() LIMIT :nbr")
     fun getNbrQuestionsFromJDQ(nameJDQ : String, nbr : Int) : Flow<List<Question>>
 
 
@@ -76,8 +76,8 @@ interface DaoDB{
     suspend fun deleteJDQ(jdq : JeuDeQuestions)
 
     //Selectionne la question de question n
-    @Query ("SELECT * FROM Question WHERE question=:n")
-    suspend fun getQuestion(n : String) : Question
+    @Query ("SELECT * FROM Question WHERE id=:n")
+    suspend fun getQuestion(n : Int) : Question
 
     @Update
     suspend fun updateQuestion(question : Question)
