@@ -1,6 +1,7 @@
 package fr.pcm.projet.projet_pcm
 
 import android.app.Application
+import android.content.Context
 import android.os.CountDownTimer
 import android.util.Log
 import androidx.compose.runtime.collectAsState
@@ -22,6 +23,7 @@ import com.opencsv.CSVReaderBuilder
 import com.opencsv.CSVParserBuilder
 import com.opencsv.enums.CSVReaderNullFieldIndicator
 import kotlinx.coroutines.flow.Flow
+import java.util.concurrent.TimeUnit
 
 /* Model associé à la Vue du GameActivity */
 class GameModel(private val application: Application) : AndroidViewModel (application) {
@@ -32,7 +34,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var jdq = data.loadJDQName("")
     var qjdq = data.loadQuestionsFromJDQ("")
     var idJDQ = data.loadIdJDQ("")
-    var loadQuestions = data.getNbrQuestionsFromJDQ(-1,0)
+    var loadQuestions = data.getNbrQuestionsFromJDQ("",0)
     var themeGame = mutableStateOf("")
     var jdqGame = mutableStateOf("")
 
@@ -45,6 +47,8 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     var questionActuelle = Question(-1,-1,"null","null",-1)
     private var timer: CountDownTimer? = null
+
+    private val prefs = application.getSharedPreferences("Connexion", Context.MODE_PRIVATE)
 
 
 
@@ -167,30 +171,12 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
-    fun loadQuestions(){
-        //var valeurIdJdq: Int
-        viewModelScope.launch(Dispatchers.IO){
-            //valeurIdJdq = getIdJDQ()
-            loadQuestions = data.getNbrQuestionsFromJDQ(1,5)
-        }
-
-
-    }
-    suspend fun getIdJDQ() : Int {
-        var valeurIdJDQ = 0
-
-        idJDQ.collect { idJDQ ->
-            valeurIdJDQ = idJDQ
-        }
-        Log.d("VALEUR_ID_JDQ","$valeurIdJDQ")
-
-        return valeurIdJDQ
-    }
-    fun loadNbrQuestionFromJDQ(idJDQ : Int, nbr : Int){
-        viewModelScope.launch(Dispatchers.IO){
-            loadQuestions = data.getNbrQuestionsFromJDQ(idJDQ,nbr)
+    fun loadQuestions() {
+        viewModelScope.launch(Dispatchers.IO) {
+            loadQuestions = data.getNbrQuestionsFromJDQ(jdqGame.value, nbQuestion.value)
         }
     }
+
 
     fun loadNextQuestions(){
 
@@ -298,13 +284,35 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun startJeu(){
         this.nbrQuestionRep.value = 0
         tempsRestant.value = tempsInitial.value
-        viewModelScope.launch(Dispatchers.IO){
-            loadQuestions.collect { questions ->
-                if (questions.isNotEmpty()){
-                    questionActuelle = questions.first()
-                }
-            }
-        }
+        loadQuestions()
+
         startTimer()
     }
+
+    /* CONNEXION JOURNALIERE POUR REDUIRE LE STATUT DE 1 POUR QUE LE JOUEUR PUISSE JOUER */
+
+    fun updateStatus(){
+        if(isFirstLaunch()){
+            viewModelScope.launch(Dispatchers.IO){
+                data.updateQuestionStatus()
+            }
+        }
+    }
+
+    fun isFirstLaunch() : Boolean{
+        val lastLaunchDate = prefs.getLong(LAST_LAUNCH_DATE_KEY, 0)
+        val currentDate = System.currentTimeMillis()
+
+        if(currentDate - lastLaunchDate >= TimeUnit.DAYS.toMillis(1)){
+            prefs.edit().putLong(LAST_LAUNCH_DATE_KEY, currentDate).apply()
+            return true
+        }
+    return false
+    }
+
+    companion object {
+        private const val LAST_LAUNCH_DATE_KEY = "last_launch_date"
+    }
+
+
 }

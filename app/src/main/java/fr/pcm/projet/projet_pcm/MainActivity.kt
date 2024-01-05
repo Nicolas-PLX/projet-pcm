@@ -100,6 +100,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.selects.select
 import java.lang.NumberFormatException
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,6 +124,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun menuDemarrage(model : GameModel = viewModel()){
+    model.updateStatus()
     val navController = rememberNavController()
     Scaffold(
         topBar = { TopBarPrincipal()},
@@ -355,7 +357,7 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
         }
         Spacer(modifier = Modifier.height(80.dp))
         Row {
-            Button(onClick = {model.loadQuestions();model.startJeu();model.loadNextQuestions()
+            Button(onClick = {model.startJeu();model.loadNextQuestions()
 
                 isGameRuning = true}) {Text("Start")}
         }
@@ -364,8 +366,6 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
             while (isGameRuning && model.tempsRestant.value > 0){
                 delay(1000)
                 timer = model.tempsRestant.value
-                Log.d("QUESTION_ACT","$questionAct")
-
             }
         }
     }

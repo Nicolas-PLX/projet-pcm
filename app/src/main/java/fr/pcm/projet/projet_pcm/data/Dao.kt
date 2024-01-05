@@ -61,9 +61,10 @@ interface DaoDB{
     @Query ("SELECT * FROM JeuDeQuestions WHERE nom=:n")
     suspend fun getJDQbyName(n : String) : JeuDeQuestions
 
-    // Requête qui sélectionne un certains nombres de questions issu d'un jeu de question
-    @Query("SELECT * FROM Question WHERE idJeuDeQuestions =:idJDQ ORDER BY RANDOM() LIMIT :nbr")
-    fun getNbrQuestionsFromJDQ(idJDQ : Int, nbr : Int) : Flow<List<Question>>
+    // Requête qui sélectionne un certains nombres de questions issu d'un jeu de question. On choisit les
+    // questions avec comme statut 1
+    @Query("SELECT * FROM Question JOIN JeuDeQuestions ON Question.idJeuDeQuestions = JeuDeQuestions.id WHERE nom =:nameJDQ AND statut = 1 ORDER BY RANDOM() LIMIT :nbr")
+    fun getNbrQuestionsFromJDQ(nameJDQ : String, nbr : Int) : Flow<List<Question>>
 
 
     //Supprime les questions de la base de donnée
@@ -80,4 +81,8 @@ interface DaoDB{
 
     @Update
     suspend fun updateQuestion(question : Question)
+
+    // Reduis de 1 le statut tout les jours
+    @Query("UPDATE Question SET statut = CASE WHEN statut > 1 THEN statut - 1 ELSE 1 END")
+    suspend fun updateQuestionStatus()
 }
