@@ -15,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,6 +62,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -94,6 +96,7 @@ import androidx.navigation.compose.rememberNavController
 import fr.pcm.projet.projet_pcm.data.Theme
 import fr.pcm.projet.projet_pcm.GameModel
 import fr.pcm.projet.projet_pcm.ui.theme.ProjetpcmTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.selects.select
 import java.lang.NumberFormatException
@@ -131,7 +134,7 @@ fun menuDemarrage(model : GameModel = viewModel()){
             composable("modifier"){ GestionDatabaseScreen(padding,navController,model)}
             composable("modifierJDQ"){GestionJDQScreen(padding,navController,model)}
             composable("modifierQ"){ GestionQScreen(padding,navController,model)}
-            composable("game"){GameScreen(padding, navController,model,model::verifRep)}
+            composable("game"){GameScreen(padding, navController,model)}
         }
     }
 }
@@ -281,7 +284,7 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
                 model.tempsRestant.value = temps.toLong() * 1000
                 model.tempsInitial.value = model.tempsRestant.value
                 model.nbQuestion.value = nbrQuestion.toInt()
-                model.jdqGame = selectedJDQ; model.themeGame = selectedTheme
+                model.jdqGame.value = selectedJDQ; model.themeGame.value = selectedTheme
                 currentRoute == "game"; navController.navigate("game")
             }}) {
                 Text("Jouer")
@@ -302,31 +305,68 @@ fun verifParam(nbr : String, temps : String) : Boolean{
 
 /*Je ferai demain je suis fatigué*/
 @Composable
-fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel, verifRep: (String, String) -> Unit){
+fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel){
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val timer by remember { mutableLongStateOf(model.tempsRestant.value)}
+    var timer by remember { mutableLongStateOf(model.tempsRestant.value)}
     val listeQuestion = model.loadQuestions.collectAsState(listOf())
     var rep by remember {mutableStateOf("")}
-    Column{
+    var questionAct by remember{ mutableStateOf("")}
+    var questionRep by remember { mutableStateOf(false) }
+    var isGameRuning by remember { mutableStateOf(false) }
+
+
+    var show by remember{mutableStateOf(" ")}
+
+
+    model.loadIdJDQ(model.jdqGame.value)
+    Column(horizontalAlignment = Alignment.CenterHorizontally){
         Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)){
             var timerInSeconds = timer / 1000
             Text("$timerInSeconds", fontSize = 60.sp)
         }
     }
-    Column {
-        var nbrQuestion = model.nbQuestion
-        var i = 0
+    Column(modifier = Modifier
+        .padding(vertical = 64.dp)
+        .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(80.dp))
         Row {
-            Box(modifier = Modifier.border(1.dp, Color(0.9725f, 0.7961f, 0.8588f), RectangleShape).padding(horizontal = 10.dp, vertical = 5.dp)) {
-                //var question = listeQuestion[i]
-                Text(/*question.question*/"Test affichage de questions blablabla")
+            val question = model.questionActuelle
+            Box(modifier = Modifier
+                .border(1.dp, Color(0.9725f, 0.7961f, 0.8588f), RectangleShape)
+                .padding(horizontal = 10.dp, vertical = 5.dp)) {
+
+                var idQ = question.id
+                if (idQ != -1){show = question.question}
+                Text(show, fontSize = 30.sp)
+
             }
         }
         Spacer(modifier = Modifier.height(30.dp))
         Row {
-            OutlinedTextField(value = rep, onValueChange = {rep = it}, colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White))
+            OutlinedTextField(value = rep, onValueChange = {rep = it}, /*colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White)*/)
+        }
+        Spacer(modifier = Modifier.height(30.dp))
+        Row {
+            Button(onClick = {
+            model.loadNextQuestions(); isGameRuning = false}){Text("Valider")}
+        }
+        Spacer(modifier = Modifier.height(80.dp))
+        Row {
+            Button(onClick = {model.loadQuestions();model.startJeu();model.loadNextQuestions()
+
+                isGameRuning = true}) {Text("Start")}
+        }
+
+        LaunchedEffect(isGameRuning,timer){
+            while (isGameRuning && model.tempsRestant.value > 0){
+                delay(1000)
+                timer = model.tempsRestant.value
+                Log.d("QUESTION_ACT","$questionAct")
+
+            }
         }
     }
 }
@@ -575,5 +615,6 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
     }
     return  selectedQuestions
 }
+
 
 

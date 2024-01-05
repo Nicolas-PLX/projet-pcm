@@ -2,6 +2,7 @@ package fr.pcm.projet.projet_pcm
 
 import android.app.Application
 import android.os.CountDownTimer
+import android.util.Log
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 import com.opencsv.CSVReaderBuilder
 import com.opencsv.CSVParserBuilder
 import com.opencsv.enums.CSVReaderNullFieldIndicator
+import kotlinx.coroutines.flow.Flow
 
 /* Model associé à la Vue du GameActivity */
 class GameModel(private val application: Application) : AndroidViewModel (application) {
@@ -31,18 +33,20 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var qjdq = data.loadQuestionsFromJDQ("")
     var idJDQ = data.loadIdJDQ("")
     var loadQuestions = data.getNbrQuestionsFromJDQ(-1,0)
-    var themeGame = ""
-    var jdqGame = ""
+    var themeGame = mutableStateOf("")
+    var jdqGame = mutableStateOf("")
 
     /*paramétrage de la partie */
     var tempsInitial = mutableLongStateOf(15000) //en milliseconde
     var tempsRestant = mutableLongStateOf(15000)
     var nbQuestion = mutableIntStateOf(10) // Nombre de question
     var badRep = mutableIntStateOf(0)
-    var nbrQuestionRep = mutableIntStateOf(0)
+    var nbrQuestionRep = mutableIntStateOf(1)
 
-    var questionActuelle : Question? = null
+    var questionActuelle = Question(-1,-1,"null","null",-1)
     private var timer: CountDownTimer? = null
+
+
 
     fun chargerJDQ(n:String){
         //viewModelScope.launch(Dispatchers.IO){
@@ -53,16 +57,15 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     }
 
     fun loadQuestionsFromJDQ(n:String){
-        //viewModelScope.launch(Dispatchers.IO){
-        //    qjdq = data.loadQuestionsFromJDQ(n)
-        //}
         viewModelScope.launch(Dispatchers.IO){
             qjdq = data.loadQuestionsFromJDQ(n)
         }
     }
 
     fun loadIdJDQ(n:String){
-        idJDQ = data.loadIdJDQ(n)
+        viewModelScope.launch(Dispatchers.IO){
+            idJDQ = data.loadIdJDQ(n)
+        }
     }
 
     fun remplissageThemes(){
@@ -164,10 +167,43 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
+    fun loadQuestions(){
+        //var valeurIdJdq: Int
+        viewModelScope.launch(Dispatchers.IO){
+            //valeurIdJdq = getIdJDQ()
+            loadQuestions = data.getNbrQuestionsFromJDQ(1,5)
+        }
+
+
+    }
+    suspend fun getIdJDQ() : Int {
+        var valeurIdJDQ = 0
+
+        idJDQ.collect { idJDQ ->
+            valeurIdJDQ = idJDQ
+        }
+        Log.d("VALEUR_ID_JDQ","$valeurIdJDQ")
+
+        return valeurIdJDQ
+    }
     fun loadNbrQuestionFromJDQ(idJDQ : Int, nbr : Int){
         viewModelScope.launch(Dispatchers.IO){
             loadQuestions = data.getNbrQuestionsFromJDQ(idJDQ,nbr)
         }
+    }
+
+    fun loadNextQuestions(){
+
+        Log.d("QUESTION_ACTUELLE","$questionActuelle")
+        viewModelScope.launch(Dispatchers.IO){
+            loadQuestions.collect { questions ->
+                if (questions.isNotEmpty()){
+                    questionActuelle = questions.get(nbrQuestionRep.value)
+                }
+            }
+        }
+        Log.d("QUESTION_ACTUELLE","$questionActuelle")
+
     }
 
     fun verifRep(repUser : String, repQ : String){
@@ -200,7 +236,11 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun startTimer(){
         timer = object : CountDownTimer(tempsRestant.value, 1000){
             override fun onTick(millisUntilFinished: Long) {
-                tempsRestant.value = millisUntilFinished
+                viewModelScope.launch(Dispatchers.Main){
+                    tempsRestant.value = millisUntilFinished
+                    Log.d("TIMER","${tempsRestant.value}")
+                }
+
             }
 
             override fun onFinish() {
@@ -212,7 +252,9 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun resetTimer(){
         timer?.cancel()
         tempsRestant.value = tempsInitial.value
-        startTimer()
+        viewModelScope.launch(Dispatchers.Main){
+            startTimer()
+        }
     }
 
     fun questionNonRep(){
@@ -232,9 +274,21 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
-    fun questionRep(){
-        verifRep("","")
-        /* Todo a finir */
+    fun questionRep(repUser : String){
+        questionActuelle?.reponse?.let { verifRep(repUser, it) }
+        nbrQuestionRep.value + 1
+        if (nbQuestion.value == nbrQuestionRep.value){
+            finJeu()
+        } else {
+            viewModelScope.launch(Dispatchers.IO){
+                loadQuestions.collect { questions ->
+                    if (questions.isNotEmpty()){
+                        questionActuelle = questions.first()
+                        resetTimer() //Pas sûr
+                    }
+                }
+            }
+        }
     }
 
     fun finJeu(){
@@ -251,5 +305,6 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
                 }
             }
         }
+        startTimer()
     }
 }
