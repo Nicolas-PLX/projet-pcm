@@ -145,12 +145,10 @@ fun BottomBar(navController: NavHostController) = BottomNavigation{
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-//TODO : s'occuper plus tard du style couleur etc ... c'est pas important pour l'instant
-fun TopBarPrincipal() = // Dans l'idéal, ici mettre le nom du jeu ou je sais pas quoi, avec le bouton paramètre ?
-    TopAppBar(title = {Text(text = "Bienvenue !", modifier = Modifier
+fun TopBarPrincipal() =
+    TopAppBar(title = {Text(text = "Memo", modifier = Modifier
         .fillMaxWidth()
         /*.fillMaxHeight()*/,
-        // TODO : faire l'alignement (je suis golmon) .align(CenterVertically),
         style = TextStyle(color = Color.Black, fontSize = 24.sp))},
         navigationIcon = {
             Image(painter = painterResource(id = R.drawable.engrenage), //Todo : rendre l'image vraiment png?
@@ -266,6 +264,7 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
             Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){ /*Todo : lancer une partie */
                 model.tempsRestant.value = temps.toLong() * 1000
                 model.tempsInitial.value = model.tempsRestant.value
+                Log.d("NBR QUESTION","$nbrQuestion | ${nbrQuestion.toInt()}")
                 model.nbQuestion.value = nbrQuestion.toInt()
                 model.jdqGame.value = selectedJDQ; model.themeGame.value = selectedTheme
                 currentRoute == "game"; navController.navigate("game")
@@ -285,12 +284,7 @@ fun verifParam(nbr : String, temps : String) : Boolean{
         false
     }
 }
-/* Todo pour moi demain
-Faire la fin d'un jeu (quand il n'y a plus de questions)
-Gérer le bug du timer qui ne se re affiche pas quand on répond à une question (mais qui se reset si on ne repond pas)
-Vérifier que "ma" et "me" sont passé à 1 dans le statut
 
- */
 @Composable
 fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel){
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -299,15 +293,17 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
     var rep by remember {mutableStateOf("")}
     var questionRep by remember { mutableStateOf(false) }
     var isGameRuning by remember { mutableStateOf(false) }
+    var isGameFinished = model.gameFinished
 
-
-    var show by remember{mutableStateOf(" ")}
-
+    var show by remember{mutableStateOf("")}
     var repQuestion by remember{ mutableStateOf("") }
 
-    Log.d("TIMER DEBUT","$timer")
+    var flagCumulateDialog by remember { mutableStateOf(true) }
+    var quitter by remember { mutableStateOf(false) }
+
 
     if(timer <= 1000 && isGameRuning == true){
+        flagCumulateDialog = true
         isGameRuning = false
         repQuestion = model.questionActuelle.reponse
         model.questionNonRep()
@@ -315,21 +311,34 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
         GameScreenAlertDialog(
             bonneRep = GoodOrFalse,
             rep = repQuestion,
-            relanceTimer = {model.resetTimer()},
-            reponse = {questionRep = false},
+            relanceTimer = {model.resetTimer(); isGameRuning = true},
+            reponse = {questionRep = false; flagCumulateDialog = false},
             refreshRep = {rep = " "}
         )
     }
 
     if (questionRep){
+        flagCumulateDialog = true
         var GoodOrFalse = model.bonneRep
+        Log.d("model gameFinished","${model.gameFinished}")
         GameScreenAlertDialog(
             bonneRep = GoodOrFalse,
             rep = repQuestion,
-            relanceTimer = {model.resetTimer()},
-            reponse = {questionRep = false},
-            refreshRep = {rep = " "}
+            relanceTimer = {if(!model.gameFinished){model.resetTimer()} else {quitter = true};isGameRuning = true},
+            reponse = {questionRep = false; /*flagCumulateDialog = false*/},
+            refreshRep = {rep = ""}
         )
+    }
+    if (isGameFinished && quitter){
+        Log.d("CurrentRoute", "$currentRoute")
+        Log.d("IsGameFinished", isGameFinished.toString())
+        Log.d("FlagCumulateDialog", flagCumulateDialog.toString())
+        GameScreenEndAlertDialog(nbrQ = model.nbQuestion.value,
+            nbrBR = model.nbQuestion.value - model.badRep.value,
+            finJeu = {isGameFinished = false;         model.gameFinished = false
+                ;flagCumulateDialog = true},
+            quitter = {currentRoute == "home"; navController.navigate("home")/*quitter = */},
+            rejouer = {navController.navigateUp()})
     }
 
 
@@ -429,6 +438,39 @@ fun GameScreenAlertDialog(bonneRep:
     )
 }
 
+@Composable
+fun GameScreenEndAlertDialog(nbrQ : Int, nbrBR : Int, finJeu :() -> Unit,quitter :() -> Unit,rejouer :() ->Unit){
+    AlertDialog(
+        text = {
+            Text("Jeu terminé ! Vous avez obtenu la note de : $nbrBR/$nbrQ")
+        },
+        onDismissRequest = {
+            quitter()
+            finJeu()
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    finJeu()
+                    rejouer()
+                }
+            ) {
+                Text("Rejouer")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = {
+                    finJeu()
+                    quitter()
+                }
+            ) {
+                Text("Quitter")
+            }
+        }
+    )
+
+}
 
 
 

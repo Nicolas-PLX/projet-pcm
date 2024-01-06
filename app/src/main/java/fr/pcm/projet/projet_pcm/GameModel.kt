@@ -45,6 +45,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var badRep = mutableIntStateOf(0)
     var nbrQuestionRep = mutableIntStateOf(1)
     var bonneRep = false
+    var gameFinished = false
 
     var questionActuelle = Question(-1,-1,"null","null",-1)
     private var timer: CountDownTimer? = null
@@ -173,6 +174,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     }
 
     fun loadQuestions() {
+        Log.d("NBR QUESTION LOAD","${nbQuestion.value}")
         viewModelScope.launch(Dispatchers.IO) {
             loadQuestions = data.getNbrQuestionsFromJDQ(jdqGame.value, nbQuestion.value)
         }
@@ -183,7 +185,8 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         viewModelScope.launch(Dispatchers.IO){
             loadQuestions.collect { questions ->
                 if (questions.isNotEmpty()){
-                    questionActuelle = questions.get(nbrQuestionRep.value)
+                    //questionActuelle = questions.get(nbrQuestionRep.value)
+                    questionActuelle = questions.first()
                 }
             }
         }
@@ -219,8 +222,9 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     suspend fun decrementQuestion(idQ : Int){
         val q = this.data.getQuestion(idQ)
-        q.statut = q.statut - 1
-
+        if(q.statut > 1){
+            q.statut = 1
+        }
         data.updateQuestion(q)
     }
 
@@ -256,11 +260,12 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun questionNonRep(){
         Log.d("QCT QUESTIONNONREP","${questionActuelle.id} | ${questionActuelle.question} | ${questionActuelle.reponse} | ")
 
-        badRep.value + 1
-        nbrQuestionRep.value + 1
+        badRep.value = badRep.value + 1
+        nbrQuestionRep.value = nbrQuestionRep.value + 1
         viewModelScope.launch(Dispatchers.IO){
             decrementQuestion(questionActuelle.id)
         }
+        Log.d("END GAME","${nbQuestion.value} | ${nbrQuestionRep.value}")
         if (nbQuestion.value == nbrQuestionRep.value){
             finJeu()
             Log.d("QCT NONREP FIN","${questionActuelle.id} | ${questionActuelle.question} | ${questionActuelle.reponse} | ")
@@ -284,7 +289,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         Log.d("QCT QUESTION REP","${questionActuelle.id} | ${questionActuelle.question} | ${questionActuelle.reponse} | ")
 
         questionActuelle?.reponse?.let { verifRep(repUser, it, idQ) }
-        nbrQuestionRep.value + 1
+        nbrQuestionRep.value = nbrQuestionRep.value + 1
         if(bonneRep){
             viewModelScope.launch(Dispatchers.IO){
                 incrementQuestion(idQ)
@@ -294,6 +299,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
                 decrementQuestion(idQ)
             }
         }
+        Log.d("END GAME","${nbQuestion.value} | ${nbrQuestionRep.value}")
         if (nbQuestion.value == nbrQuestionRep.value){
             finJeu()
         } else {
@@ -311,7 +317,8 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     }
 
     fun finJeu(){
-        /*Todo Fonction fin de jeu*/
+        cancelTimer()
+        gameFinished = true
     }
 
     fun startJeu(){
