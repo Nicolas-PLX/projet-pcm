@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import fr.pcm.projet.projet_pcm.Converters
 
-@Database(entities = [Theme::class, JeuDeQuestions::class, Question::class, Statistique::class], version = 6, exportSchema = false)
+@Database(entities = [Theme::class, JeuDeQuestions::class, Question::class, Statistique::class], version = 8, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class BD : RoomDatabase() {
     abstract fun dao(): DaoDB
