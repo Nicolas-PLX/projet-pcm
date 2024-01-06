@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -93,6 +94,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val scrollView = ScrollView(this)
+                    val linearLayout = LinearLayout(this)
+                    linearLayout.orientation = LinearLayout.VERTICAL
+                    scrollView.addView(linearLayout)
+
                     menuDemarrage()
                 }
             }
@@ -320,7 +326,6 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
     if (questionRep){
         flagCumulateDialog = true
         var GoodOrFalse = model.bonneRep
-        Log.d("model gameFinished","${model.gameFinished}")
         GameScreenAlertDialog(
             bonneRep = GoodOrFalse,
             rep = repQuestion,
@@ -330,9 +335,6 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
         )
     }
     if (isGameFinished && quitter){
-        Log.d("CurrentRoute", "$currentRoute")
-        Log.d("IsGameFinished", isGameFinished.toString())
-        Log.d("FlagCumulateDialog", flagCumulateDialog.toString())
         GameScreenEndAlertDialog(nbrQ = model.nbQuestion.value,
             nbrBR = model.nbQuestion.value - model.badRep.value,
             finJeu = {isGameFinished = false;         model.gameFinished = false
@@ -375,14 +377,10 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
         Row {
             Button(onClick = {
                 repQuestion = model.questionActuelle.reponse
-                Log.d("REP MAIN","$rep")
-                Log.d("QCT MAIN ","${model.questionActuelle.id} | ${model.questionActuelle.question} | ${model.questionActuelle.reponse} | ")
                 model.questionRep(rep,model.questionActuelle.id)
-                Log.d("QCT MAIN ","${model.questionActuelle.id} | ${model.questionActuelle.question} | ${model.questionActuelle.reponse} | ")
                 questionRep = true
                 isGameRuning = false
                 model.cancelTimer()
-                Log.d("QCT MAIN APRES CANCEL","${model.questionActuelle.id} | ${model.questionActuelle.question} | ${model.questionActuelle.reponse} | ")
 
             }){Text("Valider")}
         }
@@ -397,7 +395,6 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
             while (isGameRuning && model.tempsRestant.value > 0){
                 delay(1000)
                 timer = model.tempsRestant.value
-                Log.d("TIMER LAUNCHED","$timer")
             }
         }
     }
@@ -560,7 +557,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                 model.newJDQ(selectedTheme,newJDQ)
                 Toast.makeText(context,"Le jeu de question a bien été créé.",Toast.LENGTH_LONG).show()
             } }) { Text("Créer") }
-            Button(onClick = {if (verificationThemeEtJDQ(selectedTheme,selectedJDQ)){ /* TODO : supprimer aussi les questions qui sont dans le jeu de question*/
+            Button(onClick = {if (verificationThemeEtJDQ(selectedTheme,selectedJDQ)){
                 model.deleteJDQ(selectedJDQ)
                 Toast.makeText(context,"Le jeu de question a bien été supprimé.",Toast.LENGTH_LONG).show()
             }
@@ -582,15 +579,19 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
         val listeQuestions by model.qjdq.collectAsState(listOf())
         val id by model.idJDQ.collectAsState(initial = 0)
         model.remplissageThemes()
+
+        var showExpl by remember { mutableStateOf(true) }
         Row {
-            Text(
-                "Si vous souhaitez ajouter une question, veuillez selectionner en premier lieu" +
-                        "un thème, puis un jeu de question. Ensuite, veuillez insérer votre question et sa" +
-                        "réponse, puis presser le bouton.\n" +
-                        "Si vous souhaitez enlever une question, faites de même, puis en affichant la liste" +
-                        "de question déjà existante, cliquer pour sélectionner les questions que vous souhaitez" +
-                        "supprimer, puis presser le bouton correspondant."
-            )
+            if(showExpl){
+                Text(
+                    "Si vous souhaitez ajouter une question, veuillez selectionner en premier lieu" +
+                            "un thème, puis un jeu de question. Ensuite, veuillez insérer votre question et sa" +
+                            "réponse, puis presser le bouton.\n" +
+                            "Si vous souhaitez enlever une question, faites de même, puis en affichant la liste" +
+                            "de question déjà existante, cliquer pour sélectionner les questions que vous souhaitez" +
+                            "supprimer, puis presser le bouton correspondant."
+                )
+            }
         }
         Column(
             modifier = Modifier
@@ -627,7 +628,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         jdq.forEach { jd ->
                             DropdownMenuItem(text = { Text("$jd") },
-                                onClick = { selectedJDQ = jd;model.loadQuestionsFromJDQ(selectedJDQ); expanded = false })
+                                onClick = { selectedJDQ = jd;model.loadQuestionsFromJDQ(selectedJDQ); showExpl = false; expanded = false })
                         }
                     }
                 }
@@ -691,8 +692,8 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
             modifier =
             Modifier
                 .padding(15.dp)
-                .fillMaxSize(0.8f)
-                .height(60.dp)
+                .fillMaxSize(0.5f)
+                .fillMaxWidth(0.8f)
 
         ) {
             item {
@@ -718,6 +719,5 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
     }
     return  selectedQuestions
 }
-
 
 
