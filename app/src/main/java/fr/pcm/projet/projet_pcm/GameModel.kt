@@ -39,6 +39,8 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var jdq = data.loadJDQName("")
     var qjdq = data.loadQuestionsFromJDQ("")
     var idJDQ = data.loadIdJDQ("")
+    var idJDQbis = data.loadIdJDQWithThemeName("")
+
     var loadQuestions = data.getNbrQuestionsFromJDQ("",0)
     var themeGame = mutableStateOf("")
     var jdqGame = mutableStateOf("")
@@ -55,8 +57,6 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     var questionActuelle = Question(-1,-1,"null","null",-1)
     private var timer: CountDownTimer? = null
-    var idJDQ_int_format = data.loadIdJDQWithThemeName("")
-    var int_idJDQ_Test = -1
 
 
     private val prefs = application.getSharedPreferences("Connexion", Context.MODE_PRIVATE)
@@ -76,8 +76,8 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         jdq = data.loadJDQName(n)
     }
 
-    fun testJDQ(n:String){
-        idJDQ_int_format = data.loadIdJDQWithThemeName(n)
+    fun loadIdJDQWithThemeName(n:String){
+        idJDQbis = data.loadIdJDQWithThemeName(n)
     }
     /*
     fun getIdJDQ() : Int {

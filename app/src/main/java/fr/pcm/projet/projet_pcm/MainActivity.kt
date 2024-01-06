@@ -261,6 +261,7 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
     val jdq by model.jdq.collectAsState(listOf())
     val allThemes by model.tousLesThemes.collectAsState(listOf())
     val id by model.idJDQ.collectAsState(initial = -1)
+    val idbis by model.idJDQbis.collectAsState(initial = -1)
     model.remplissageThemes()
     model.remplissageJDQ()
     model.remplissageQuestions()
@@ -299,6 +300,9 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
         var temps by remember { mutableStateOf("15") }
         var nbrQuestion by remember { mutableStateOf("10") }
         Log.d("AJOUT:selectedJDQ","$selectedJDQ")
+        model.loadIdJDQ(selectedJDQ)
+        model.loadIdJDQWithThemeName(selectedTheme)
+        Log.d("AJOUT:ID","$id|$idbis")
 
 
         Row {
@@ -322,10 +326,8 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
             }
             Spacer(modifier = Modifier.width(16.dp))
             Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){
-                while(id == 0 || id == -1){
-                    model.loadIdJDQ(selectedJDQ)
-                }
-                //model.loadIdJDQ(selectedJDQ)
+
+                model.loadIdJDQ(selectedJDQ)
                 Log.d("AJOUT_ID_DEBUT_GAME_SCREEN","$id")
                 model.tempsRestant.value = temps.toLong() * 1000
                 model.tempsInitial.value = model.tempsRestant.value
