@@ -310,30 +310,27 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
-    fun newStats(){
-        var id = 0
-        viewModelScope.launch(Dispatchers.IO) {
-            //TODO gérer le bug ici
-            loadIdJDQ(jdqGame.value)
-            idJDQ.collect() { valeur -> id = valeur }
-        }
-        Log.d("AJOUT STATS :","$id | ${nbQuestion.value} | ${jdqGame.value} | ${nbQuestion.value - badRep.value}")
-        viewModelScope.launch(Dispatchers.IO) {
-
-            data.insertStatistique(Statistique(id = 0,
-                id,
-                jdqGame.value,
-                nbQuestion.value,
-                nbQuestion.value - badRep.value,
-            ))
-        }
-    }
 
     fun finJeu(){
         cancelTimer()
         gameFinished = true
-        newStats()
+        var id = 0
+        viewModelScope.launch(Dispatchers.IO) {
+            loadIdJDQ(jdqGame.value)
+            idJDQ.collect() { valeur -> id = valeur }
+        }
+            Log.d("AJOUT STATS :","$id | ${nbQuestion.value} | ${nbQuestion.value - badRep.value}")
+        viewModelScope.launch(Dispatchers.IO) {
 
+        data.insertStatistique(Statistique(id = 0,
+                id,
+
+                jdqGame.value,
+                nbQuestion.value,
+                nbQuestion.value - badRep.value,
+                //date
+            ))
+        }
     }
 
     fun startJeu(){
