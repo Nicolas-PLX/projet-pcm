@@ -1,6 +1,13 @@
 package fr.pcm.projet.projet_pcm
 
 import android.annotation.SuppressLint
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
@@ -9,7 +16,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -72,22 +81,31 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import fr.pcm.projet.projet_pcm.data.Question
 import fr.pcm.projet.projet_pcm.ui.theme.ProjetpcmTheme
 import kotlinx.coroutines.delay
 import java.lang.NumberFormatException
 import java.util.Calendar
+import java.util.concurrent.TimeUnit
+
+const val CHANNEL_ID = "MY_CHANNEL_ID"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        createChannel(this)
         setContent {
             ProjetpcmTheme {
                 // A surface container using the 'background' color from the theme
@@ -95,7 +113,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-
+                    val req = PeriodicWorkRequestBuilder<RappelWorker>(24L, TimeUnit.HOURS)
+                        .setInitialDelay(1L, TimeUnit.MINUTES).build()
+                    //Il va faire la première notif une minute après le lancement de l'appli : c'est pour montrer que ça marche en soutenance
+                    WorkManager.getInstance(this).enqueue(req)
                     menuDemarrage()
                 }
             }
@@ -103,11 +124,43 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun createChannel(c: Context){
+    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+        val name = "MY_CHANNEL"
+        val descriptionText = "notification"
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
+        mChannel.description = descriptionText
+        val notificationManager =
+            c.getSystemService(ComponentActivity.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(mChannel)
+    }
+}
+
+fun createNotif(c: Context){
+    val intent = Intent(c, MainActivity::class.java)
+    val pending = PendingIntent.getActivity(c, 1, intent, PendingIntent.FLAG_IMMUTABLE)
+    val builder = NotificationCompat.Builder(c, CHANNEL_ID).setSmallIcon(androidx.core.R.drawable.notification_bg)
+        .setContentTitle("Projet").setContentText("Viens faire ton aprentissage du jour !")
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT).setAutoCancel(true)
+        .setContentIntent(pending).setCategory(Notification.CATEGORY_REMINDER)
+    val myNotif = builder.build()
+    val notificationManager=c.getSystemService(ComponentActivity.NOTIFICATION_SERVICE) as NotificationManager
+    notificationManager.notify(44, myNotif)
+}
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter") //temporaire
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun menuDemarrage(model : GameModel = viewModel()){
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        Log.d("permissions", if(it)"granted" else "denied")
+    }
+    // Permissions à voir plus tard
+    //permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
     model.updateStatus()
     val navController = rememberNavController()
     Scaffold(

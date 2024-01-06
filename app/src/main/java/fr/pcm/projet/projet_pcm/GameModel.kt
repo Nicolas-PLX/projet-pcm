@@ -19,6 +19,7 @@ import fr.pcm.projet.projet_pcm.data.JeuDeQuestions
 import fr.pcm.projet.projet_pcm.data.Question
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.math.*
 import com.opencsv.CSVReaderBuilder
 import com.opencsv.CSVParserBuilder
 import com.opencsv.enums.CSVReaderNullFieldIndicator
@@ -174,7 +175,8 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
                 val id = row[0].toIntOrNull() ?: 0
                 val idJeuDeQuestions = row[1].toIntOrNull() ?: 0
                 val statut = row[4].toIntOrNull() ?: 0
-                Question(id = id, idJeuDeQuestions = idJeuDeQuestions, question = row[2], reponse = row[3], statut = statut)
+                val prochainJour = row[5].toIntOrNull() ?: 0
+                Question(id = id, idJeuDeQuestions = idJeuDeQuestions, question = row[2], reponse = row[3], statut = statut, prochainJour = prochainJour)
             }
             viewModelScope.launch(Dispatchers.IO){
                 data.insertQuestionsList(csvQuestions.map{ it.toQuestion()})
@@ -183,7 +185,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     }
 
     private fun Question.toQuestion(): Question {
-        return Question(id = this.id, idJeuDeQuestions = this.idJeuDeQuestions, question = this.question, reponse = this.reponse, statut = this.statut)
+        return Question(id = this.id, idJeuDeQuestions = this.idJeuDeQuestions, question = this.question, reponse = this.reponse, statut = this.statut, prochainJour = this.prochainJour)
     }
 
     fun addNewQuestion(question : String, reponse : String, idJDQ : Int){
@@ -252,6 +254,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     suspend fun incrementQuestion(idQ : Int){
         val q = this.data.getQuestion(idQ)
         q.statut = q.statut + 1
+        q.prochainJour = (q.statut-1).toDouble().pow(2).toInt()
 
         data.updateQuestion(q)
     }
@@ -260,6 +263,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         val q = this.data.getQuestion(idQ)
         if(q.statut > 1){
             q.statut = 1
+            q.prochainJour = 1
         }
         data.updateQuestion(q)
     }
