@@ -31,6 +31,12 @@ interface DaoDB{
     @Insert(onConflict = IGNORE)
     suspend fun insertQuestionsList(questions:List<Question>)
 
+    @Insert(onConflict =  IGNORE)
+    suspend fun insertStatistique(statistique : Statistique)
+
+    @Insert(onConflict = IGNORE)
+    suspend fun insertStatistiqueList(statistiques: List<Statistique>)
+
     @Query("SELECT * FROM Theme")
     fun loadAllTheme(): Flow<List<Theme>>
 
@@ -67,6 +73,8 @@ interface DaoDB{
     fun getNbrQuestionsFromJDQ(nameJDQ : String, nbr : Int) : Flow<List<Question>>
 
 
+    @Query("SELECT * FROM Statistique WHERE idJeuDeQuestions = :n")
+    fun getAllStatistiqueFromJDQ(n : Int) : Flow<List<Statistique>>
     //Supprime les questions de la base de donnée
     @Delete
     suspend fun deleteQuestions(questions: List<Question>)

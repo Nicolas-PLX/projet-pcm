@@ -22,7 +22,10 @@ import kotlinx.coroutines.launch
 import com.opencsv.CSVReaderBuilder
 import com.opencsv.CSVParserBuilder
 import com.opencsv.enums.CSVReaderNullFieldIndicator
+import fr.pcm.projet.projet_pcm.data.Statistique
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import java.util.Date
 import java.util.concurrent.TimeUnit
 
 /* Model associé à la Vue du GameActivity */
@@ -56,6 +59,18 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     fun chargerJDQ(n:String){
         jdq = data.loadJDQName(n)
+    }
+
+    fun getIdJDQ() : Int {
+        var id = 0
+        Log.d("valeur id avant","$id")
+
+        viewModelScope.launch(Dispatchers.IO) {
+            idJDQ.collect(){valeur -> id = valeur}
+        }
+        Log.d("valeur id après","$id")
+
+        return id
     }
 
     /*Fonction qui reset le model*/
@@ -295,9 +310,30 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
+    fun newStats(){
+        var id = 0
+        viewModelScope.launch(Dispatchers.IO) {
+            //TODO gérer le bug ici
+            loadIdJDQ(jdqGame.value)
+            idJDQ.collect() { valeur -> id = valeur }
+        }
+        Log.d("AJOUT STATS :","$id | ${nbQuestion.value} | ${jdqGame.value} | ${nbQuestion.value - badRep.value}")
+        viewModelScope.launch(Dispatchers.IO) {
+
+            data.insertStatistique(Statistique(id = 0,
+                id,
+                jdqGame.value,
+                nbQuestion.value,
+                nbQuestion.value - badRep.value,
+            ))
+        }
+    }
+
     fun finJeu(){
         cancelTimer()
         gameFinished = true
+        newStats()
+
     }
 
     fun startJeu(){

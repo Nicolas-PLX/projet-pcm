@@ -83,6 +83,7 @@ import fr.pcm.projet.projet_pcm.data.Question
 import fr.pcm.projet.projet_pcm.ui.theme.ProjetpcmTheme
 import kotlinx.coroutines.delay
 import java.lang.NumberFormatException
+import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,10 +95,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val scrollView = ScrollView(this)
-                    val linearLayout = LinearLayout(this)
-                    linearLayout.orientation = LinearLayout.VERTICAL
-                    scrollView.addView(linearLayout)
 
                     menuDemarrage()
                 }
@@ -578,7 +575,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
         val jdq by model.jdq.collectAsState(listOf())
         val allThemes by model.tousLesThemes.collectAsState(listOf())
         val listeQuestions by model.qjdq.collectAsState(listOf())
-        val id by model.idJDQ.collectAsState(initial = 0)
+        val id by model.idJDQ.collectAsState(-1)
         model.remplissageThemes()
 
         var showExpl by remember { mutableStateOf(true) }
@@ -621,6 +618,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                         .padding(horizontal = 5.dp)
                 ) {
                     var expanded by remember { mutableStateOf(false) }
+
                     TextButton(onClick = {
                         model.chargerJDQ(selectedTheme)
                         expanded = true
@@ -635,6 +633,8 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
+            model.loadIdJDQ(selectedJDQ)
+
             var selectedQuestions = afficherQuestions(liste = listeQuestions)
             var newQuestion by remember { mutableStateOf("") }
             var newQuestionRep by remember { mutableStateOf("") }
@@ -653,6 +653,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                     if (verifAjout(newQuestion, newQuestionRep)) {
 
                         model.loadIdJDQ(selectedJDQ)
+                        Log.d("ID question ajout","$id")
                         model.addNewQuestion(newQuestion, newQuestionRep, id)
                         newQuestion = ""; newQuestionRep = ""
                         Toast.makeText(
@@ -725,3 +726,7 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
 }
 
 
+@Composable
+fun StatistiqueScreen(navController: NavHostController, padding: PaddingValues, model: GameModel){
+
+}
