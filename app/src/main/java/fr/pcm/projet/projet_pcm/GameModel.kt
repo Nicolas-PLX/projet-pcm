@@ -25,6 +25,7 @@ import com.opencsv.enums.CSVReaderNullFieldIndicator
 import fr.pcm.projet.projet_pcm.data.Statistique
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -40,6 +41,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var loadQuestions = data.getNbrQuestionsFromJDQ("",0)
     var themeGame = mutableStateOf("")
     var jdqGame = mutableStateOf("")
+    var idjdgGame = mutableStateOf(-2)
 
     /*paramétrage de la partie */
     var tempsInitial = mutableLongStateOf(15000) //en milliseconde
@@ -52,18 +54,34 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     var questionActuelle = Question(-1,-1,"null","null",-1)
     private var timer: CountDownTimer? = null
+    var idJDQ_int_format = data.loadIdJDQWithThemeName("")
+    var int_idJDQ_Test = -1
+
 
     private val prefs = application.getSharedPreferences("Connexion", Context.MODE_PRIVATE)
 
-
+    /*
+    private fun obtenirValeurIdJDQ() {
+        viewModelScope.launch {
+            idJDQ_int_format.collect { valeur ->
+                if(valeur.isNotEmpty()){
+                    int_idJDQ_Test = valeur.first()
+                }
+            }
+        }
+    }*/
 
     fun chargerJDQ(n:String){
         jdq = data.loadJDQName(n)
     }
 
+    fun testJDQ(n:String){
+        idJDQ_int_format = data.loadIdJDQWithThemeName(n)
+    }
+    /*
     fun getIdJDQ() : Int {
         var id = 0
-        Log.d("valeur id avant","$id")
+        Log.d("AJOUT GETIDJDQ","$id")
 
         viewModelScope.launch(Dispatchers.IO) {
             idJDQ.collect(){valeur -> id = valeur}
@@ -71,7 +89,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         Log.d("valeur id après","$id")
 
         return id
-    }
+    }*/
 
     /*Fonction qui reset le model*/
     fun resetModel(){
@@ -101,9 +119,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     }
 
     fun loadIdJDQ(n:String){
-        viewModelScope.launch(Dispatchers.IO){
             idJDQ = data.loadIdJDQ(n)
-        }
     }
 
     fun remplissageThemes(){
@@ -314,21 +330,26 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun finJeu(){
         cancelTimer()
         gameFinished = true
+        /*
         var id = 0
         viewModelScope.launch(Dispatchers.IO) {
+            Log.d("FINJEU JDGGAME","|${jdqGame.value}|")
             loadIdJDQ(jdqGame.value)
-            idJDQ.collect() { valeur -> id = valeur }
-        }
-            Log.d("AJOUT STATS :","$id | ${nbQuestion.value} | ${nbQuestion.value - badRep.value}")
+            idJDQ.collect() { valeur -> if(valeur.isNotEmpty()){id = valeur.first()} }
+        }*/
+        //obtenirValeurIdJDQ()
+        //Log.d("AJOUT STATS :","$id | ${nbQuestion.value} |${jdqGame.value}| ${nbQuestion.value - badRep.value}")
+        Log.d("AJOUT STATS :","${idjdgGame.value} | ${nbQuestion.value} |${jdqGame.value}| ${nbQuestion.value - badRep.value}")
+        //var id_bis = getIdJDQ()
+        //Log.d("AJOUT STATS :","$id_bis | ${nbQuestion.value} |${jdqGame.value}| ${nbQuestion.value - badRep.value}")
+
         viewModelScope.launch(Dispatchers.IO) {
 
         data.insertStatistique(Statistique(id = 0,
-                id,
-
+                idjdgGame.value,
                 jdqGame.value,
                 nbQuestion.value,
                 nbQuestion.value - badRep.value,
-                //date
             ))
         }
     }

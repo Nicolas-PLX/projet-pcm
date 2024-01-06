@@ -207,6 +207,7 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
     var selectedJDQ by remember { mutableStateOf("Jeux") }
     val jdq by model.jdq.collectAsState(listOf())
     val allThemes by model.tousLesThemes.collectAsState(listOf())
+    val id by model.idJDQ.collectAsState(initial = -1)
     model.remplissageThemes()
     model.remplissageJDQ()
     model.remplissageQuestions()
@@ -244,6 +245,9 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
         Spacer(modifier = Modifier.height(32.dp))
         var temps by remember { mutableStateOf("15") }
         var nbrQuestion by remember { mutableStateOf("10") }
+        Log.d("AJOUT:selectedJDQ","$selectedJDQ")
+
+
         Row {
             OutlinedTextField(value = temps, onValueChange = {temps = it}, label = {Text("Temps (seconde)")},
                 modifier = Modifier
@@ -264,12 +268,16 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
                 Text(text = "Retour")
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){ /*Todo : lancer une partie */
+            Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){
+                while(id == 0 || id == -1){
+                    model.loadIdJDQ(selectedJDQ)
+                }
+                //model.loadIdJDQ(selectedJDQ)
+                Log.d("AJOUT_ID_DEBUT_GAME_SCREEN","$id")
                 model.tempsRestant.value = temps.toLong() * 1000
                 model.tempsInitial.value = model.tempsRestant.value
-                Log.d("NBR QUESTION","$nbrQuestion | ${nbrQuestion.toInt()}")
                 model.nbQuestion.value = nbrQuestion.toInt()
-                model.jdqGame.value = selectedJDQ; model.themeGame.value = selectedTheme
+                model.jdqGame.value = selectedJDQ; model.themeGame.value = selectedTheme; model.idjdgGame.value = id
                 currentRoute == "game"; navController.navigate("game")
             }}) {
                 Text("Jouer")
@@ -603,7 +611,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                     var expanded by remember { mutableStateOf(false) }
                     TextButton(onClick = { expanded = true }) {
                         Text(selectedTheme, fontSize = 25.sp)
-                    }
+                        }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         allThemes.forEach { theme ->
                             DropdownMenuItem(text = { Text(theme.nom, fontSize = 25.sp) },
@@ -633,7 +641,10 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
+            Log.d("ID question ajout","$id")
+            Log.d("ID question ajout","$selectedJDQ")
             model.loadIdJDQ(selectedJDQ)
+            Log.d("ID question ajout","$id")
 
             var selectedQuestions = afficherQuestions(liste = listeQuestions)
             var newQuestion by remember { mutableStateOf("") }
@@ -651,7 +662,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
 
                 Button(onClick = {
                     if (verifAjout(newQuestion, newQuestionRep)) {
-
+                        Log.d("ID question ajout","$id")
                         model.loadIdJDQ(selectedJDQ)
                         Log.d("ID question ajout","$id")
                         model.addNewQuestion(newQuestion, newQuestionRep, id)
