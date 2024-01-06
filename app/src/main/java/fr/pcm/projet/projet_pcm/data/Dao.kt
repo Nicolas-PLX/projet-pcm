@@ -12,27 +12,27 @@ import kotlinx.coroutines.flow.StateFlow
 
 
 @Dao
-interface DaoDB{
+interface DaoDB {
     @Insert(onConflict = IGNORE)
-    suspend fun insertTheme(theme:Theme)
+    suspend fun insertTheme(theme: Theme)
 
     @Insert(onConflict = IGNORE)
-    suspend fun insertThemesList(themes:List<Theme>)
+    suspend fun insertThemesList(themes: List<Theme>)
 
     @Insert(onConflict = IGNORE)
-    suspend fun insertJeuDeQuestions(jeuDeQuestions:JeuDeQuestions)
+    suspend fun insertJeuDeQuestions(jeuDeQuestions: JeuDeQuestions)
 
     @Insert(onConflict = IGNORE)
-    suspend fun insertJeuxDeQuestionsList(jeuxDeQuestions:List<JeuDeQuestions>)
+    suspend fun insertJeuxDeQuestionsList(jeuxDeQuestions: List<JeuDeQuestions>)
 
     @Insert(onConflict = IGNORE)
-    suspend fun insertQuestion(question:Question)
+    suspend fun insertQuestion(question: Question)
 
     @Insert(onConflict = IGNORE)
-    suspend fun insertQuestionsList(questions:List<Question>)
+    suspend fun insertQuestionsList(questions: List<Question>)
 
-    @Insert(onConflict =  IGNORE)
-    suspend fun insertStatistique(statistique : Statistique)
+    @Insert(onConflict = IGNORE)
+    suspend fun insertStatistique(statistique: Statistique)
 
     @Insert(onConflict = IGNORE)
     suspend fun insertStatistiqueList(statistiques: List<Statistique>)
@@ -40,9 +40,15 @@ interface DaoDB{
     @Query("SELECT * FROM Theme")
     fun loadAllTheme(): Flow<List<Theme>>
 
+    @Query("SELECT * FROM JeuDeQuestions")
+    fun loadAllJDQ(): Flow<List<JeuDeQuestions>>
+
     //La liste des noms des thèmes
     @Query("SELECT DISTINCT nom FROM Theme")
     fun loadThemeName():List<String>
+
+    @Query("SELECT * FROM Statistique WHERE idJeuDeQuestions=:n")
+    fun loadAllStatsFromIdJDQ(n : Int): Flow<List<Statistique>>
 
     //La liste des noms des jeux de questions pour un thème donné
     @Query("SELECT nom FROM JeuDeQuestions WHERE nomTheme=:n")
@@ -91,6 +97,9 @@ interface DaoDB{
 
     @Update
     suspend fun updateQuestion(question : Question)
+
+    @Query("SELECT * FROM Statistique")
+    fun getAllHisto() : Flow <List<Statistique>>
 
     // Reduis de 1 le statut tout les jours
     @Query("UPDATE Question SET statut = CASE WHEN statut > 1 THEN statut - 1 ELSE 1 END")

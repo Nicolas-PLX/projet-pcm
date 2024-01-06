@@ -18,6 +18,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.lifecycle.viewModelScope
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -64,6 +65,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -94,6 +96,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import fr.pcm.projet.projet_pcm.data.Question
+import fr.pcm.projet.projet_pcm.data.Statistique
 import fr.pcm.projet.projet_pcm.ui.theme.ProjetpcmTheme
 import kotlinx.coroutines.delay
 import java.lang.NumberFormatException
@@ -174,6 +177,8 @@ fun menuDemarrage(model : GameModel = viewModel()){
             composable("modifierJDQ"){GestionJDQScreen(padding,navController,model)}
             composable("modifierQ"){ GestionQScreen(padding,navController,model)}
             composable("game"){GameScreen(padding, navController,model)}
+            composable("stats"){ StatistiqueScreen(navController,padding,model)}
+            composable("questions"){afficheQuestionScreen(navController,padding,model)}
         }
     }
 }
@@ -245,7 +250,11 @@ fun centreMenu(padding : PaddingValues,navController: NavHostController){
                 modifier = Modifier.padding(start = 8.dp)) {
                 Text(text = "Modifier")
             }
-
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+        Row(){
+            Button(onClick = { currentRoute == "stats"
+                            navController.navigate("stats"){popUpTo("home")}}) {Text(text = "Statistiques")}
         }
     }
 
@@ -300,10 +309,21 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
         var temps by remember { mutableStateOf("15") }
         var nbrQuestion by remember { mutableStateOf("10") }
         Log.d("AJOUT:selectedJDQ","$selectedJDQ")
-        model.loadIdJDQ(selectedJDQ)
-        model.loadIdJDQWithThemeName(selectedTheme)
-        Log.d("AJOUT:ID","$id|$idbis")
 
+        model.loadIdJDQ(selectedJDQ)
+
+        /*A cause de la coroutine, il est possible que model.idqGame ne se modifie pas, comme si l'utilisateur
+        était "trop rapide" par rapport au programme, ce qui empêche le programme d'attribuer idJdqGame.value
+        Le problème persistait dans GameScreen, donc il fallait attribuer cette valeur dans cette écran.
+        DisposableEffect permet d'être sûr que même si l'utilisateur est trop rapide pour le programme,
+        alors le code du "onDispose" se fera "quoi qu'il arrive".
+         */
+        DisposableEffect(selectedJDQ,selectedTheme){
+            model.loadIdJDQ(selectedJDQ)
+            onDispose{
+                model.idjdqGame.value = id
+            }
+        }
 
         Row {
             OutlinedTextField(value = temps, onValueChange = {temps = it}, label = {Text("Temps (seconde)")},
@@ -326,19 +346,23 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
             }
             Spacer(modifier = Modifier.width(16.dp))
             Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){
-
                 model.loadIdJDQ(selectedJDQ)
                 Log.d("AJOUT_ID_DEBUT_GAME_SCREEN","$id")
                 model.tempsRestant.value = temps.toLong() * 1000
                 model.tempsInitial.value = model.tempsRestant.value
                 model.nbQuestion.value = nbrQuestion.toInt()
-                model.jdqGame.value = selectedJDQ; model.themeGame.value = selectedTheme; model.idjdgGame.value = id
+                model.jdqGame.value = selectedJDQ; model.themeGame.value = selectedTheme; model.idjdqGame.value = id
                 currentRoute == "game"; navController.navigate("game")
             }}) {
                 Text("Jouer")
             }
         }
     }
+}
+@Composable
+fun afficheParam(Theme : String, jdq : String){
+    Text(text ="Vous avez choisi : $Theme | $jdq")
+
 }
 
 fun verifParam(nbr : String, temps : String) : Boolean{
@@ -696,10 +720,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Log.d("ID question ajout","$id")
-            Log.d("ID question ajout","$selectedJDQ")
             model.loadIdJDQ(selectedJDQ)
-            Log.d("ID question ajout","$id")
 
             var selectedQuestions = afficherQuestions(liste = listeQuestions)
             var newQuestion by remember { mutableStateOf("") }
@@ -793,6 +814,172 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
 
 
 @Composable
-fun StatistiqueScreen(navController: NavHostController, padding: PaddingValues, model: GameModel){
+fun StatistiqueScreen(navController: NavHostController, padding: PaddingValues, model: GameModel) {
+    val listeStatistique by model.loadHisto.collectAsState(listOf())
+    val listeJDQ by model.allJdq.collectAsState(listOf())
+    val listeStatsFromJDQ by model.loadHistoJDQ.collectAsState(listOf())
+    var expanded by remember { mutableStateOf(false) }
+    var expandedJDQ by remember{ mutableStateOf(false) }
+    var selectedJDQ by remember { mutableStateOf("Jeux") }
+    model.getAllJDQ()
 
+    listeJDQ.forEach{valeur ->
+        Log.d("forEach ListeJDQ","${valeur.nom}")
+    }
+    Column(
+        modifier = Modifier
+            .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row{
+            if (expanded){
+                afficheListeStats(listeStatistique)
+            }
+            if (expandedJDQ){
+                Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary)) {
+                    var expandedDdM by remember { mutableStateOf(false) }
+                    TextButton(onClick = { expandedDdM = true }) {
+                        Text(selectedJDQ, fontSize = 25.sp)
+                    }
+                    DropdownMenu(expanded = expandedDdM, onDismissRequest = { expandedDdM = false }) {
+                        listeJDQ.forEach { jdq ->
+                            DropdownMenuItem(text = { Text(jdq.nom, fontSize = 25.sp) },
+                                onClick = { selectedJDQ = jdq.nom;model.loadAllStatsFromIdJDQ(jdq.id); expandedDdM = false })
+                        }
+                    }
+                }
+
+            }
+        }
+        Row{
+            if(expandedJDQ){
+                afficheListeStats(listeStatsFromJDQ)
+            }
+        }
+        Spacer(modifier = Modifier.height(50.dp))
+        Row{
+            Button(onClick = {
+                model.getAllHisto()
+                if(expandedJDQ){expandedJDQ = false}
+                expanded = !expanded
+            }) {Text("Afficher tout l'historique")}
+            Button(onClick = { model.getAllJDQ()
+                if (expanded){expanded = false}
+                expandedJDQ = !expandedJDQ
+
+            }) {Text("Statistique d'un Jeu")}
+        }
+        Row{
+            Button(onClick = {navController.navigateUp()}) {Text("Retour")}
+        }
+    }
 }
+
+@Composable
+fun afficheListeStats(liste : List<Statistique>){
+    if (liste.isEmpty()){
+        Text("La liste est vide")
+    } else {
+        LazyColumn(
+            modifier =
+            Modifier
+                .padding(15.dp)
+                .fillMaxSize(0.6f)
+                .fillMaxWidth()
+
+        ) {
+            item {
+                Text("Jeux | Nombre de questions | Bonnes réponses | % | Date")
+            }
+            items(liste) {
+                    stat ->
+                Card(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(10.dp)
+                        .background(Color.Gray)
+                ) { Text("${stat.nomJeuDeQuestions} |" +
+                        " ${stat.nbrQ} | " +
+                        "${stat.nbrBonneRep} | " +
+                        "${(stat.nbrBonneRep.toDouble() / stat.nbrQ.toDouble()) * 100.0}% |" +
+                        "${stat.date.toString()}", fontSize = 15.sp) }
+            }
+        }
+    }
+}
+
+@Composable
+fun afficheQuestionScreen(navController: NavHostController, padding: PaddingValues, model: GameModel){
+    var expandedModifStatut by remember { mutableStateOf(false) }
+    var statut by remember { mutableStateOf("") }
+    Column(
+        modifier = Modifier
+            .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row{
+            if(expandedModifStatut) {
+                /*
+                TODO
+                 */
+                OutlinedTextField(value = statut, onValueChange = { statut = it })
+                Spacer(Modifier.width(10.dp))
+                //Button(onClick = {model.updateStatutQuestion(q,statut)}) {Text("Mettre à jour")}
+                }
+            }
+        }
+        Spacer(Modifier.height(30.dp))
+        Row{
+            Button(onClick = { /*TODO*/ }) {Text("Afficher la réponse")}
+            Button(onClick = { expandedModifStatut = !expandedModifStatut }) {Text("Modifier le statut")}
+            Button(onClick = { /*TODO*/ }) {Text("Supprimer la question") }
+        }
+        Row{
+            Button(onClick = {navController.navigateUp() }) {Text("Retour")}
+        }
+    }
+
+/*
+@Composable
+fun afficheListeQuestion(liste : List<Question>) : Question?{
+
+    var selectedQuestions by remember { mutableStateOf<Question>(null) }
+
+    if (liste.isEmpty()){
+        Text("La liste est vide")
+    } else {
+        LazyColumn(
+            modifier =
+            Modifier
+                .padding(15.dp)
+                .fillMaxSize(0.5f)
+                .fillMaxWidth(0.8f)
+
+        ) {
+            item {
+                Text("Liste de questions")
+            }
+            items(liste) {
+                    question -> val selected = selectedQuestions == question
+                Card(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(10.dp)
+                        .clickable {
+                            selectedQuestions = if (selected) {
+                                null
+                            } else {
+                                question
+                            }
+                        }
+                        .background(if (selected) Color.Gray else Color.White)
+                ) { Text(question, fontSize = 15.sp) }
+            }
+        }
+    }
+    return selectedQuestions
+}*/

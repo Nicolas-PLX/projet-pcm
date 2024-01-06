@@ -40,11 +40,16 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var qjdq = data.loadQuestionsFromJDQ("")
     var idJDQ = data.loadIdJDQ("")
     var idJDQbis = data.loadIdJDQWithThemeName("")
-
     var loadQuestions = data.getNbrQuestionsFromJDQ("",0)
+
+    /* Chargement BDD pour les Statistiques */
+    var loadHistoJDQ = data.loadAllStatsFromIdJDQ(0)
+    var loadHisto = data.getAllHisto()
+    var allJdq = data.loadAllJDQ()
+
     var themeGame = mutableStateOf("")
     var jdqGame = mutableStateOf("")
-    var idjdgGame = mutableStateOf(-2)
+    var idjdqGame = mutableStateOf(-2)
 
     /*paramétrage de la partie */
     var tempsInitial = mutableLongStateOf(15000) //en milliseconde
@@ -61,36 +66,30 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     private val prefs = application.getSharedPreferences("Connexion", Context.MODE_PRIVATE)
 
-    /*
-    private fun obtenirValeurIdJDQ() {
+
+
+    fun getAllHisto(){
         viewModelScope.launch {
-            idJDQ_int_format.collect { valeur ->
-                if(valeur.isNotEmpty()){
-                    int_idJDQ_Test = valeur.first()
-                }
-            }
+            loadHisto = data.getAllHisto()
         }
-    }*/
+    }
+
+    fun loadAllStatsFromIdJDQ(n : Int){
+        viewModelScope.launch {
+            loadHistoJDQ = data.getAllStatistiqueFromJDQ(n)
+        }
+    }
+
+    fun getAllJDQ() {
+        viewModelScope.launch(Dispatchers.IO){
+            allJdq = data.loadAllJDQ()
+        }
+    }
 
     fun chargerJDQ(n:String){
         jdq = data.loadJDQName(n)
     }
 
-    fun loadIdJDQWithThemeName(n:String){
-        idJDQbis = data.loadIdJDQWithThemeName(n)
-    }
-    /*
-    fun getIdJDQ() : Int {
-        var id = 0
-        Log.d("AJOUT GETIDJDQ","$id")
-
-        viewModelScope.launch(Dispatchers.IO) {
-            idJDQ.collect(){valeur -> id = valeur}
-        }
-        Log.d("valeur id après","$id")
-
-        return id
-    }*/
 
     /*Fonction qui reset le model*/
     fun resetModel(){
@@ -120,7 +119,9 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     }
 
     fun loadIdJDQ(n:String){
+        viewModelScope.launch(Dispatchers.IO) {
             idJDQ = data.loadIdJDQ(n)
+        }
     }
 
     fun remplissageThemes(){
@@ -268,6 +269,15 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         data.updateQuestion(q)
     }
 
+    fun updateStatutQuestion(question : Question,statut : Int){
+        viewModelScope.launch(Dispatchers.IO) {
+            question.statut = statut
+            question.prochainJour = (question.statut-1).toDouble().pow(2).toInt()
+
+            data.updateQuestion(question)
+        }
+    }
+
     fun startTimer(){
         timer = object : CountDownTimer(tempsRestant.value, 1000){
             override fun onTick(millisUntilFinished: Long) {
@@ -334,23 +344,12 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun finJeu(){
         cancelTimer()
         gameFinished = true
-        /*
-        var id = 0
-        viewModelScope.launch(Dispatchers.IO) {
-            Log.d("FINJEU JDGGAME","|${jdqGame.value}|")
-            loadIdJDQ(jdqGame.value)
-            idJDQ.collect() { valeur -> if(valeur.isNotEmpty()){id = valeur.first()} }
-        }*/
-        //obtenirValeurIdJDQ()
-        //Log.d("AJOUT STATS :","$id | ${nbQuestion.value} |${jdqGame.value}| ${nbQuestion.value - badRep.value}")
-        Log.d("AJOUT STATS :","${idjdgGame.value} | ${nbQuestion.value} |${jdqGame.value}| ${nbQuestion.value - badRep.value}")
-        //var id_bis = getIdJDQ()
-        //Log.d("AJOUT STATS :","$id_bis | ${nbQuestion.value} |${jdqGame.value}| ${nbQuestion.value - badRep.value}")
+        Log.d("AJOUT STATS :","${idjdqGame.value} | ${nbQuestion.value} |${jdqGame.value}| ${nbQuestion.value - badRep.value}")
 
         viewModelScope.launch(Dispatchers.IO) {
 
         data.insertStatistique(Statistique(id = 0,
-                idjdgGame.value,
+                idjdqGame.value,
                 jdqGame.value,
                 nbQuestion.value,
                 nbQuestion.value - badRep.value,
