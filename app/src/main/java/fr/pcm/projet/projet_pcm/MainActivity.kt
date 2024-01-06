@@ -553,7 +553,8 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
         }
         Row {
             Button(onClick = { navController.navigateUp() }) { Text("Retour") }
-            Button(onClick = {if (newJDQ != "" && selectedTheme != ""){
+            Button(onClick = {            Log.d("Check creation JDQ","$newJDQ | $selectedTheme")
+                if (newJDQ != "" && selectedTheme != ""){
                 model.newJDQ(selectedTheme,newJDQ)
                 Toast.makeText(context,"Le jeu de question a bien été créé.",Toast.LENGTH_LONG).show()
             } }) { Text("Créer") }
@@ -646,17 +647,21 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
                 OutlinedTextField(value = newQuestionRep, onValueChange = { newQuestionRep = it })
             }
             Row {
-                Button(onClick = { navController.navigateUp() }) { Text("Retour") }
+                Button(onClick = { model.resetModel(); navController.navigateUp() }) { Text("Retour") }
 
                 Button(onClick = {
                     if (verifAjout(newQuestion, newQuestionRep)) {
+
                         model.loadIdJDQ(selectedJDQ)
                         model.addNewQuestion(newQuestion, newQuestionRep, id)
+                        newQuestion = ""; newQuestionRep = ""
                         Toast.makeText(
                             context,
                             "Votre question à bien été ajouté.",
                             Toast.LENGTH_LONG
                         ).show()
+                    } else {
+                        Toast.makeText(context,"Les questions n'ont pas pu être ajoutés.", Toast.LENGTH_LONG)
                     }
                 }) { Text("Ajouter") }
 
@@ -681,7 +686,6 @@ fun verifAjout(question : String, reponse : String) : Boolean {
 }
 
 @Composable
-/*TODO : mieux gérer l'affichage */
 fun afficherQuestions(liste : List<String>) : Set<String>{
     var selectedQuestions by remember { mutableStateOf<Set<String>>(emptySet()) }
 

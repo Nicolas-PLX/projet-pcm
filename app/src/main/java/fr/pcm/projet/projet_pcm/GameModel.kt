@@ -58,6 +58,27 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         jdq = data.loadJDQName(n)
     }
 
+    /*Fonction qui reset le model*/
+    fun resetModel(){
+        themeGame = mutableStateOf("")
+        jdqGame = mutableStateOf("")
+        tempsInitial = mutableLongStateOf(15000) //en milliseconde
+        tempsRestant = mutableLongStateOf(15000)
+        nbQuestion = mutableIntStateOf(10) // Nombre de question
+        badRep = mutableIntStateOf(0)
+        nbrQuestionRep = mutableIntStateOf(1)
+        bonneRep = false
+        gameFinished = false
+
+        questionActuelle = Question(-1,-1,"null","null",-1)
+        viewModelScope.launch(Dispatchers.IO){
+            jdq = data.loadJDQName("")
+            qjdq = data.loadQuestionsFromJDQ("")
+            idJDQ = data.loadIdJDQ("")
+            loadQuestions = data.getNbrQuestionsFromJDQ("",0)
+        }
+    }
+
     fun loadQuestionsFromJDQ(n:String){
         viewModelScope.launch(Dispatchers.IO){
             qjdq = data.loadQuestionsFromJDQ(n)

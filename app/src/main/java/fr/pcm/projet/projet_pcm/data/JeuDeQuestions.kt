@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey
 //Chaque jeu de questions est associé à un thème
 @Entity(foreignKeys = [ ForeignKey(entity = Theme::class, parentColumns = ["nom"], childColumns = ["nomTheme"], onDelete = ForeignKey.CASCADE)], indices = [Index("nomTheme")] )
 data class JeuDeQuestions(
-    @PrimaryKey val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Int,
     val nom: String,
     val nomTheme: String
 )
