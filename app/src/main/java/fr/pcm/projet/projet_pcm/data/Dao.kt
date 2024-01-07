@@ -77,7 +77,7 @@ interface DaoDB {
 
     // Requête qui sélectionne un certains nombres de questions issu d'un jeu de question. On choisit les
     // questions avec comme statut 1
-    @Query("SELECT Question.* FROM Question JOIN JeuDeQuestions ON Question.idJeuDeQuestions = JeuDeQuestions.id WHERE nom =:nameJDQ AND statut = 1 ORDER BY RANDOM() LIMIT :nbr")
+    @Query("SELECT Question.* FROM Question JOIN JeuDeQuestions ON Question.idJeuDeQuestions = JeuDeQuestions.id WHERE nom =:nameJDQ AND prochainJour = 1 ORDER BY RANDOM() LIMIT :nbr")
     fun getNbrQuestionsFromJDQ(nameJDQ : String, nbr : Int) : Flow<List<Question>>
 
 
@@ -86,6 +86,9 @@ interface DaoDB {
     //Supprime les questions de la base de donnée
     @Delete
     suspend fun deleteQuestions(questions: List<Question>)
+
+    @Delete
+    suspend fun deleteQuestion(question : Question)
 
     //Supprime le JDQ de la base de donnée
     @Delete
@@ -101,7 +104,7 @@ interface DaoDB {
     @Query("SELECT * FROM Statistique")
     fun getAllHisto() : Flow <List<Statistique>>
 
-    // Reduis de 1 le statut tout les jours
-    @Query("UPDATE Question SET statut = CASE WHEN statut > 1 THEN statut - 1 ELSE 1 END")
+    // Reduis de 1 le prochainJour tout les jours
+    @Query("UPDATE Question SET prochainJour = CASE WHEN prochainJour > 1 THEN prochainJour - 1 ELSE 1 END")
     suspend fun updateQuestionStatus()
 }

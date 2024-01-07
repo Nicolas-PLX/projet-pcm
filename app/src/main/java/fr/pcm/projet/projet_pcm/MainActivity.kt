@@ -254,8 +254,13 @@ fun centreMenu(padding : PaddingValues,navController: NavHostController){
         Spacer(modifier = Modifier.height(20.dp))
         Row(){
             Button(onClick = { currentRoute == "stats"
-                            navController.navigate("stats"){popUpTo("home")}}) {Text(text = "Statistiques")}
+                            navController.navigate("stats"){popUpTo("home")}},modifier = Modifier.padding(end = 8.dp)) {Text(text = "Statistiques")}
+            Button(onClick = { currentRoute == "questions"
+                navController.navigate("questions"){popUpTo("home")}},modifier = Modifier.padding(start = 8.dp)) {Text(text = "Répertoire de questions")}
         }
+
+
+
     }
 
 }
@@ -823,9 +828,6 @@ fun StatistiqueScreen(navController: NavHostController, padding: PaddingValues, 
     var selectedJDQ by remember { mutableStateOf("Jeux") }
     model.getAllJDQ()
 
-    listeJDQ.forEach{valeur ->
-        Log.d("forEach ListeJDQ","${valeur.nom}")
-    }
     Column(
         modifier = Modifier
             .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
@@ -912,8 +914,21 @@ fun afficheListeStats(liste : List<Statistique>){
 
 @Composable
 fun afficheQuestionScreen(navController: NavHostController, padding: PaddingValues, model: GameModel){
+    val listeJDQ by model.allJdq.collectAsState(listOf())
+    val loadAllQuestions by model.allQuestions.collectAsState(listOf())
+    model.getAllJDQ()
+
+
     var expandedModifStatut by remember { mutableStateOf(false) }
+    var expandedRep by remember { mutableStateOf(false) }
+    var expandedDelete by remember { mutableStateOf(false) }
+    //var selectedTheme by remember { mutableStateOf("Thème") }
+
+    var context = LocalContext.current
     var statut by remember { mutableStateOf("") }
+    var selectedJDQ by remember { mutableStateOf("Jeux") }
+    var selectedQuestion by remember { mutableStateOf<Question?>(null) }
+
     Column(
         modifier = Modifier
             .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
@@ -921,65 +936,128 @@ fun afficheQuestionScreen(navController: NavHostController, padding: PaddingValu
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Row {
+            Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary)) {
+                var expandedDdM by remember { mutableStateOf(false) }
+                TextButton(onClick = { expandedDdM = true }) {
+                    Text(selectedJDQ, fontSize = 25.sp)
+                }
+                DropdownMenu(expanded = expandedDdM, onDismissRequest = { expandedDdM = false }) {
+                    listeJDQ.forEach { jdq ->
+                        DropdownMenuItem(text = { Text(jdq.nom, fontSize = 25.sp) },
+                            onClick = { selectedJDQ = jdq.nom;model.loadAllQuestions(jdq.id); expandedDdM = false })
+                    }
+                }
+            }
+
+        }
+        Row {
+            selectedQuestion = afficheListeQuestion(questions =loadAllQuestions, { ReturnSelectedQuestion -> selectedQuestion = ReturnSelectedQuestion })
+
+        }
         Row{
             if(expandedModifStatut) {
-                /*
-                TODO
-                 */
                 OutlinedTextField(value = statut, onValueChange = { statut = it })
                 Spacer(Modifier.width(10.dp))
-                //Button(onClick = {model.updateStatutQuestion(q,statut)}) {Text("Mettre à jour")}
+                Button(onClick = {
+                    val intStatut = statut.toIntOrNull()
+                    if(intStatut != null && selectedQuestion != null){
+                        model.updateStatutQuestion(selectedQuestion!!,intStatut)
+                        statut = ""
+                    } else {
+                        Toast.makeText(context,
+                            if(selectedQuestion == null){"Vous n'avez pas choisi de question."} else {"Format de statut invalide."},
+                            Toast.LENGTH_LONG)
+                            .show()
+                    }
+                }) {Text("Mettre à jour")}
+            }
+
+            if(expandedDelete){
+                Button(onClick = {
+                    if(selectedQuestion != null){
+                        model.deleteSingleQuestion(selectedQuestion!!)
+                    } else {
+                        Toast.makeText(context,"Vous n'avez pas choisi de question.",Toast.LENGTH_LONG).show()
+                    }
+                }) {Text("Supprimer")}
+            }
+
+            if(expandedRep){
+                Box(modifier = Modifier
+                    .border(1.dp, Color(0.9725f, 0.7961f, 0.8588f), RectangleShape)
+                    .padding(horizontal = 10.dp, vertical = 5.dp)) {
+                    var rep = " "
+                    if(selectedQuestion != null){
+                        rep = selectedQuestion!!.reponse
+                    }
+                    Text(rep, fontSize = 15.sp)
                 }
             }
         }
-        Spacer(Modifier.height(30.dp))
         Row{
-            Button(onClick = { /*TODO*/ }) {Text("Afficher la réponse")}
-            Button(onClick = { expandedModifStatut = !expandedModifStatut }) {Text("Modifier le statut")}
-            Button(onClick = { /*TODO*/ }) {Text("Supprimer la question") }
+            Button(onClick = {
+                if(expandedModifStatut || expandedDelete) {expandedModifStatut = false; expandedDelete = false}
+                expandedRep = !expandedRep }, modifier = Modifier.padding(end = 8.dp))
+            {Text("Afficher la réponse")}
+            Button(onClick = {
+                if(expandedRep || expandedDelete) {expandedRep = false; expandedDelete = false}
+                expandedModifStatut = !expandedModifStatut }, modifier = Modifier.padding(start = 8.dp))
+            {Text("Modifier le statut")}
         }
+        Spacer(Modifier.height(15.dp))
+        Row{
+            Button(onClick = {
+                if(expandedRep || expandedModifStatut){expandedRep = false; expandedModifStatut = false}
+                expandedDelete = !expandedDelete })
+            {Text("Supprimer la question") }
+        }
+        Spacer(Modifier.height(15.dp))
         Row{
             Button(onClick = {navController.navigateUp() }) {Text("Retour")}
         }
+
     }
 
-/*
+}
+
+
 @Composable
-fun afficheListeQuestion(liste : List<Question>) : Question?{
+fun afficheListeQuestion(questions : List<Question>, onQuestionSelected : (Question) -> Unit) : Question?{
+    var selectedQuestion by remember { mutableStateOf<Question?>(null) }
 
-    var selectedQuestions by remember { mutableStateOf<Question>(null) }
-
-    if (liste.isEmpty()){
-        Text("La liste est vide")
-    } else {
-        LazyColumn(
-            modifier =
-            Modifier
-                .padding(15.dp)
-                .fillMaxSize(0.5f)
-                .fillMaxWidth(0.8f)
-
-        ) {
-            item {
-                Text("Liste de questions")
-            }
-            items(liste) {
-                    question -> val selected = selectedQuestions == question
-                Card(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(10.dp)
-                        .clickable {
-                            selectedQuestions = if (selected) {
-                                null
-                            } else {
-                                question
-                            }
+    LazyColumn(
+        modifier = Modifier
+            .padding(15.dp)
+            .fillMaxSize(0.5f)
+            .fillMaxWidth(0.8f)
+    ) {
+        item {
+            Text("Question | Statut | Prochain Jour")
+        }
+        items(questions) { question ->
+            val isSelected = selectedQuestion == question
+            Card(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp)
+                    .clickable {
+                        selectedQuestion = if (isSelected) {
+                            null
+                        } else {
+                            question
                         }
-                        .background(if (selected) Color.Gray else Color.White)
-                ) { Text(question, fontSize = 15.sp) }
+                        selectedQuestion?.let { onQuestionSelected(it) }
+                    }
+                    .background(if (isSelected) Color.Gray else Color.White)
+            ) {
+                Text("${question.question} | " +
+                        "${question.statut} | " +
+                        "${if(question.prochainJour == 1){"Aujourd'hui !"} else {"dans " + (question.prochainJour - 1) + " jour(s)"}}"
+                    , fontSize = 15.sp)
             }
         }
     }
-    return selectedQuestions
-}*/
+
+    return selectedQuestion
+}

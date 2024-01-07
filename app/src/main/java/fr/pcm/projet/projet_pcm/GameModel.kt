@@ -42,10 +42,11 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var idJDQbis = data.loadIdJDQWithThemeName("")
     var loadQuestions = data.getNbrQuestionsFromJDQ("",0)
 
-    /* Chargement BDD pour les Statistiques */
+    /* Chargement BDD pour les Statistiques et pour l'affichage de questions*/
     var loadHistoJDQ = data.loadAllStatsFromIdJDQ(0)
     var loadHisto = data.getAllHisto()
     var allJdq = data.loadAllJDQ()
+    var allQuestions = data.loadAllQuestion(0)
 
     var themeGame = mutableStateOf("")
     var jdqGame = mutableStateOf("")
@@ -68,6 +69,11 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
 
 
+    fun loadAllQuestions(idJDQ: Int){
+        viewModelScope.launch{
+            allQuestions = data.loadAllQuestion(idJDQ)
+        }
+    }
     fun getAllHisto(){
         viewModelScope.launch {
             loadHisto = data.getAllHisto()
@@ -207,6 +213,12 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
+    fun deleteSingleQuestion(question : Question){
+        viewModelScope.launch(Dispatchers.IO){
+            data.deleteQuestion(question)
+        }
+    }
+
     suspend fun getJDQByName(jdq : String) : JeuDeQuestions{
         return data.getJDQbyName(jdq)
     }
@@ -255,7 +267,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     suspend fun incrementQuestion(idQ : Int){
         val q = this.data.getQuestion(idQ)
         q.statut = q.statut + 1
-        q.prochainJour = (q.statut-1).toDouble().pow(2).toInt()
+        q.prochainJour = /*(q.statut-1).toDouble().pow(2).toInt()*/ 2.0.pow(q.statut - 1).toInt()
 
         data.updateQuestion(q)
     }
@@ -272,7 +284,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     fun updateStatutQuestion(question : Question,statut : Int){
         viewModelScope.launch(Dispatchers.IO) {
             question.statut = statut
-            question.prochainJour = (question.statut-1).toDouble().pow(2).toInt()
+            question.prochainJour = /*(question.statut-1).toDouble().pow(2).toInt()*/2.0.pow(statut - 1).toInt()
 
             data.updateQuestion(question)
         }
