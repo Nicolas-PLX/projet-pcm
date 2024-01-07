@@ -1,14 +1,22 @@
 package fr.pcm.projet.projet_pcm
 
 import android.app.Application
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.Uri
 import android.os.CountDownTimer
+import android.os.Environment
 import android.util.Log
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,6 +35,8 @@ import fr.pcm.projet.projet_pcm.data.Statistique
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import java.io.File
+import java.io.FileInputStream
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -67,7 +77,72 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     private val prefs = application.getSharedPreferences("Connexion", Context.MODE_PRIVATE)
 
+    private val downloadManager = application.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    private var mapIdToUrl: MutableMap<Long, String> = mutableMapOf()
+    private var mapIdToFile: MutableMap<Long, String> = mutableMapOf()
+    fun startDownload(adr: String, fName: String){
+        val uri = Uri.parse(adr)
+        val request = DownloadManager.Request(uri)
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+            .setDestinationInExternalFilesDir(application, Environment.DIRECTORY_DOWNLOADS, fName)
+        val idLoad: Long = downloadManager.enqueue(request)
+        mapIdToUrl[idLoad] = adr
+        mapIdToFile[idLoad] = fName
+        Log.d("start", "téléchargement commencé : $idLoad")
+    }
 
+    private val cancelReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?){
+            val reference = intent?.getLongArrayExtra(DownloadManager.EXTRA_NOTIFICATION_CLICK_DOWNLOAD_IDS)
+            if(reference!=null) downloadManager.remove(*reference)
+        }
+    }
+
+    private val cancelFilter = IntentFilter(DownloadManager.ACTION_NOTIFICATION_CLICKED)
+
+    private val receiver = object : BroadcastReceiver(){
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val idDownload: Long = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)?:-1
+            if(idDownload == -1L){
+                Log.d("Receiver", "idDownload marche pas")
+                return
+            }
+            if(idDownload !in mapIdToUrl.keys){
+                Log.d("idDownload", "mauvais $idDownload")
+            }
+            Log.d("Receiver", "téléchargement réussi")
+            dlToBDD(mapIdToFile[idDownload]!!)
+        }
+    }
+
+    fun dlToBDD(fName: String){
+        val file = File(application.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fName)
+        val entreeStream = FileInputStream(file)
+        val csvReader = CSVReaderBuilder(entreeStream.reader())
+            .withCSVParser(CSVParserBuilder().withFieldAsNull(CSVReaderNullFieldIndicator.BOTH).build())
+            .build()
+        csvReader.use{ reader ->
+            reader.skip(1)
+            val csvQuestions = reader.readAll().map { row ->
+                //Peut être pb ici...
+                val idJeuDeQuestions = data.loadIdJDQ(fName).toString().toIntOrNull() ?: 0
+                addNewQuestion(question = row[2], reponse = row[3], idJeuDeQuestions)
+            }
+        }
+    }
+
+    private val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+
+    init {
+        application.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+        application.registerReceiver(cancelReceiver, cancelFilter, Context.RECEIVER_EXPORTED)
+    }
+
+    override fun onCleared(){
+        super.onCleared()
+        application.unregisterReceiver(receiver)
+        application.unregisterReceiver(cancelReceiver)
+    }
 
     fun loadAllQuestions(idJDQ: Int){
         viewModelScope.launch{

@@ -636,17 +636,28 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
         }
         Spacer(modifier = Modifier.height(16.dp))
         var newJDQ by remember { mutableStateOf("") }
+        var adr by remember {mutableStateOf("")}
         Row {
             Text("Nom du nouveau jeu :")
             OutlinedTextField(value = newJDQ, onValueChange = { newJDQ = it })
         }
+        Row{
+            Text("Dans le cas où l'on souhaite télécharger un jeu de question, il faut également mettre le lien du téléchargement:")
+        }
+        Row {
+            OutlinedTextField(value = adr, onValueChange = { adr = it })
+        }
         Row {
             Button(onClick = { navController.navigateUp() }) { Text("Retour") }
             Button(onClick = {            Log.d("Check creation JDQ","$newJDQ | $selectedTheme")
-                if (newJDQ != "" && selectedTheme != ""){
+                if (newJDQ != "" && selectedTheme != "" && adr == ""){
                 model.newJDQ(selectedTheme,newJDQ)
                 Toast.makeText(context,"Le jeu de question a bien été créé.",Toast.LENGTH_LONG).show()
-            } }) { Text("Créer") }
+            } else if(newJDQ != "" && selectedTheme != "" && adr != ""){
+                    model.newJDQ(selectedTheme,newJDQ)
+                    model.startDownload(adr, newJDQ)
+                    Toast.makeText(context,"Le jeu de question téléchargé a bien été créé.",Toast.LENGTH_LONG).show()
+            }}) { Text("Créer") }
             Button(onClick = {if (verificationThemeEtJDQ(selectedTheme,selectedJDQ)){
                 model.deleteJDQ(selectedJDQ)
                 Toast.makeText(context,"Le jeu de question a bien été supprimé.",Toast.LENGTH_LONG).show()
