@@ -117,6 +117,10 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
 
     fun dlToBDD(fName: String){
         val file = File(application.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fName)
+        if (!file.exists()) {
+            Log.d("url-file", "le fichier n'existe pas")
+            return
+        }
         val entreeStream = FileInputStream(file)
         val csvReader = CSVReaderBuilder(entreeStream.reader())
             .withCSVParser(CSVParserBuilder().withFieldAsNull(CSVReaderNullFieldIndicator.BOTH).build())
@@ -124,10 +128,20 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         csvReader.use{ reader ->
             reader.skip(1)
             val csvQuestions = reader.readAll().map { row ->
-                //Peut être pb ici...
-                val idJeuDeQuestions = data.loadIdJDQ(fName).toString().toIntOrNull() ?: 0
-                addNewQuestion(question = row[2], reponse = row[3], idJeuDeQuestions)
-            }
+                    try {
+                        Log.d("CSV_ROW", row.joinToString())
+                        val id = row[0].toIntOrNull() ?: 0
+                        val idJeuDeQuestions = row[1].toIntOrNull() ?: 0
+                        val statut = row[4].toIntOrNull() ?: 0
+                        val prochainJour = row[5].toIntOrNull() ?: 0
+                        viewModelScope.launch(Dispatchers.IO){
+                            data.insertQuestion(Question(id = id, idJeuDeQuestions = idJeuDeQuestions, question = row[2] ?: "", reponse = row[3] ?: "", statut = statut, prochainJour = prochainJour))
+                        }
+                    } catch (e: Exception) {
+                        Log.e("CSV_READ_ERROR", "Error processing CSV row: $row", e)
+                        null
+                    }
+                }.filterNotNull()
         }
     }
 
