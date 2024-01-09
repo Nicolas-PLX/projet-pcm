@@ -211,16 +211,7 @@ fun TopBarPrincipal() =
         .fillMaxWidth()
         /*.fillMaxHeight()*/,
         style = TextStyle(color = Color.Black, fontSize = 24.sp))},
-        navigationIcon = {
-            Image(painter = painterResource(id = R.drawable.engrenage), //Todo : rendre l'image vraiment png?
-                contentDescription = null,
-                modifier = Modifier
-                    .padding(8.dp)
-                    .size(36.dp)
-                    .background(Color.Transparent)
-                    .clickable {/*Todo: action sur le click*/
-                    })
-        }, modifier = Modifier.background(Color.Green),
+        navigationIcon = {}, modifier = Modifier.background(Color.Green),
         colors = TopAppBarDefaults.largeTopAppBarColors(
             containerColor = Color(248,203,219),
             titleContentColor = MaterialTheme.colorScheme.primary,
@@ -388,6 +379,7 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
     var rep by remember {mutableStateOf("")}
     var questionRep by remember { mutableStateOf(false) }
     var isGameRuning by remember { mutableStateOf(false) }
+    var questionNotRep by remember { mutableStateOf(false) }
     var isGameFinished = model.gameFinished
 
     var show by remember{mutableStateOf("")}
@@ -396,18 +388,23 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
     var flagCumulateDialog by remember { mutableStateOf(true) }
     var quitter by remember { mutableStateOf(false) }
 
-
-    if(timer <= 1000 && isGameRuning == true){
-        flagCumulateDialog = true
-        isGameRuning = false
+    if (model.tempsRestant.value <= 1000){
+        questionNotRep = true
         repQuestion = model.questionActuelle.reponse
         model.questionNonRep()
+        model.cancelTimer()
+    }
+
+
+    if(questionNotRep){
+        flagCumulateDialog = true
+        isGameRuning = false
         var GoodOrFalse = model.bonneRep
         GameScreenAlertDialog(
             bonneRep = GoodOrFalse,
             rep = repQuestion,
-            relanceTimer = {model.resetTimer(); isGameRuning = true},
-            reponse = {questionRep = false; flagCumulateDialog = false},
+            relanceTimer = {if(!model.gameFinished){model.resetTimer()} else {quitter = true};isGameRuning = true},
+            reponse = {questionNotRep = false;questionRep = false; flagCumulateDialog = false},
             refreshRep = {rep = " "}
         )
     }
@@ -453,7 +450,14 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
                 .padding(horizontal = 10.dp, vertical = 5.dp)) {
 
                 var idQ = question.id
-                if (idQ != -1){show = question.question}
+                if (idQ != -1){
+                    if(questionRep || questionNotRep){
+                        show = ""
+                    } else {
+                        show = question.question
+
+                    }
+                }
                 Text(show, fontSize = 30.sp)
 
             }
