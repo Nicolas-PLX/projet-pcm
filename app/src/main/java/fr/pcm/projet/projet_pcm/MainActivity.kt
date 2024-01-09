@@ -77,6 +77,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -168,10 +169,9 @@ fun menuDemarrage(model : GameModel = viewModel()){
     val navController = rememberNavController()
     Scaffold(
         topBar = { TopBarPrincipal()},
-        //content = { centreMenu() }, //Je l'ai commenté car sinon ça marchait pas
         bottomBar = { BottomBar(navController)}){ padding ->
         NavHost(navController = navController, startDestination = "home", modifier = Modifier.padding(padding)){
-            composable("home"){ centreMenu(padding,navController)} //Mettre ici la fonction pour l'écran principale
+            composable("home"){ centreMenu(padding,navController)}
             composable("jouer"){ DebutGameScreen(padding,navController,model)}
             composable("modifier"){ GestionDatabaseScreen(padding,navController,model)}
             composable("modifierJDQ"){GestionJDQScreen(padding,navController,model)}
@@ -209,7 +209,7 @@ fun BottomBar(navController: NavHostController) = BottomNavigation{
 fun TopBarPrincipal() =
     TopAppBar(title = {Text(text = "Memo", modifier = Modifier
         .fillMaxWidth()
-        /*.fillMaxHeight()*/,
+        ,
         style = TextStyle(color = Color.Black, fontSize = 24.sp))},
         navigationIcon = {}, modifier = Modifier.background(Color.Green),
         colors = TopAppBarDefaults.largeTopAppBarColors(
@@ -258,7 +258,8 @@ fun centreMenu(padding : PaddingValues,navController: NavHostController){
 
 //Composable pour l'onglet "Jouer"
 @Composable
-fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, model: GameModel/* = viewModel()*/){
+fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, model: GameModel){
+    val context = LocalContext.current
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     var selectedTheme by remember {mutableStateOf("Thème")}
@@ -266,7 +267,6 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
     val jdq by model.jdq.collectAsState(listOf())
     val allThemes by model.tousLesThemes.collectAsState(listOf())
     val id by model.idJDQ.collectAsState(initial = -1)
-    val idbis by model.idJDQbis.collectAsState(initial = -1)
     model.remplissageThemes()
     model.remplissageJDQ()
     model.remplissageQuestions()
@@ -304,7 +304,6 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
         Spacer(modifier = Modifier.height(32.dp))
         var temps by remember { mutableStateOf("15") }
         var nbrQuestion by remember { mutableStateOf("10") }
-        Log.d("AJOUT:selectedJDQ","$selectedJDQ")
 
         model.loadIdJDQ(selectedJDQ)
 
@@ -325,14 +324,12 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
             OutlinedTextField(value = temps, onValueChange = {temps = it}, label = {Text("Temps (seconde)")},
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)/*,
-                colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White)*/
+                    .padding(end = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
             )
             OutlinedTextField(value = nbrQuestion, onValueChange = {nbrQuestion = it}, label = {Text("Nombre de questions")},
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)/*,
-                colors = TextFieldDefaults.outlinedTextFieldColors(textColor = White)*/
+                    .padding(start = 8.dp), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
             )
         }
         Spacer(modifier = Modifier.height(60.dp))
@@ -343,34 +340,32 @@ fun DebutGameScreen(padding : PaddingValues,navController: NavHostController, mo
             Spacer(modifier = Modifier.width(16.dp))
             Button(onClick = { if (verificationThemeEtJDQ(selectedTheme,selectedJDQ) && verifParam(nbrQuestion,temps)){
                 model.loadIdJDQ(selectedJDQ)
-                Log.d("AJOUT_ID_DEBUT_GAME_SCREEN","$id")
                 model.tempsRestant.value = temps.toLong() * 1000
                 model.tempsInitial.value = model.tempsRestant.value
                 model.nbQuestion.value = nbrQuestion.toInt()
                 model.jdqGame.value = selectedJDQ; model.themeGame.value = selectedTheme; model.idjdqGame.value = id
                 currentRoute == "game"; navController.navigate("game")
+            } else {
+                Toast.makeText(context,"Paramètres incorrect. Assurez-vous que les paramètres minimales sont corrects :" +
+                        "5 Questions, 5 secondes.",Toast.LENGTH_LONG).show()
             }}) {
                 Text("Jouer")
             }
         }
     }
 }
-@Composable
-fun afficheParam(Theme : String, jdq : String){
-    Text(text ="Vous avez choisi : $Theme | $jdq")
-
-}
 
 fun verifParam(nbr : String, temps : String) : Boolean{
     return try {
         val int_nbr = nbr.toInt()
         val int_time = temps.toInt()
-        int_nbr > 0 && int_time > 0
+        int_nbr >= 5 && int_time >= 5
     } catch (e : NumberFormatException) {
         false
     }
 }
 
+/* écran de jeu */
 @Composable
 fun GameScreen(padding: PaddingValues, navController: NavHostController, model: GameModel){
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -493,7 +488,7 @@ fun GameScreen(padding: PaddingValues, navController: NavHostController, model: 
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+/* AlertDialog qui s'affiche quand le joueur a répondu à une question */
 @Composable
 fun GameScreenAlertDialog(bonneRep:
                           Boolean, rep : String,
@@ -528,6 +523,7 @@ fun GameScreenAlertDialog(bonneRep:
     )
 }
 
+/* AlertDialog qui s'affiche quand le joueur à fini une partie de jeu */
 @Composable
 fun GameScreenEndAlertDialog(nbrQ : Int, nbrBR : Int, finJeu :() -> Unit,quitter :() -> Unit,rejouer :() ->Unit){
     AlertDialog(
@@ -608,6 +604,10 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Row{
+            Text("Si vous souhaitez rajouter un jeu, Sélectionner un thème, puis rentrer le nom.")
+        }
+        Spacer(Modifier.height(20.dp))
         Row {
             Box(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary)) {
                 var expanded by remember { mutableStateOf(false) }
@@ -653,7 +653,7 @@ fun GestionJDQScreen(padding: PaddingValues, navController: NavHostController,mo
         }
         Row {
             Button(onClick = { navController.navigateUp() }) { Text("Retour") }
-            Button(onClick = {            Log.d("Check creation JDQ","$newJDQ | $selectedTheme")
+            Button(onClick = {
                 if (newJDQ != "" && selectedTheme != "" && adr == ""){
                 model.newJDQ(selectedTheme,newJDQ)
                 Toast.makeText(context,"Le jeu de question a bien été créé.",Toast.LENGTH_LONG).show()
@@ -793,6 +793,7 @@ fun verifAjout(question : String, reponse : String) : Boolean {
     return (question != "") && (reponse != "")
 }
 
+/* Affiche la liste de questions si on souhaite les retirer d'un jeu de questions */
 @Composable
 fun afficherQuestions(liste : List<String>) : Set<String>{
     var selectedQuestions by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -832,7 +833,7 @@ fun afficherQuestions(liste : List<String>) : Set<String>{
     return  selectedQuestions
 }
 
-
+/* Fonction qui affiche les statistiques de jeu */
 @Composable
 fun StatistiqueScreen(navController: NavHostController, padding: PaddingValues, model: GameModel) {
     val listeStatistique by model.loadHisto.collectAsState(listOf())
@@ -937,7 +938,6 @@ fun afficheQuestionScreen(navController: NavHostController, padding: PaddingValu
     var expandedModifStatut by remember { mutableStateOf(false) }
     var expandedRep by remember { mutableStateOf(false) }
     var expandedDelete by remember { mutableStateOf(false) }
-    //var selectedTheme by remember { mutableStateOf("Thème") }
 
     var context = LocalContext.current
     var statut by remember { mutableStateOf("") }
@@ -946,7 +946,7 @@ fun afficheQuestionScreen(navController: NavHostController, padding: PaddingValu
 
     Column(
         modifier = Modifier
-            .padding(vertical = 64.dp) //taille parfaite par rapport au TopAppBar : au dessus on dépasse, en dessous espace vide
+            .padding(vertical = 64.dp)
             .fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -1037,6 +1037,7 @@ fun afficheQuestionScreen(navController: NavHostController, padding: PaddingValu
 }
 
 
+/*Affiche la liste de questions dans un LazyColumn, renvoie la question sélectionné */
 @Composable
 fun afficheListeQuestion(questions : List<Question>, onQuestionSelected : (Question) -> Unit) : Question?{
     var selectedQuestion by remember { mutableStateOf<Question?>(null) }

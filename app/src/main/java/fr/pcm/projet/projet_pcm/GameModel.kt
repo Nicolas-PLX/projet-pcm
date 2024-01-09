@@ -49,7 +49,6 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
     var jdq = data.loadJDQName("")
     var qjdq = data.loadQuestionsFromJDQ("")
     var idJDQ = data.loadIdJDQ("")
-    var idJDQbis = data.loadIdJDQWithThemeName("")
     var loadQuestions = data.getNbrQuestionsFromJDQ("",0)
 
     /* Chargement BDD pour les Statistiques et pour l'affichage de questions*/
@@ -115,21 +114,21 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
+    /* Fonction qui permet le téléchargement d'un fichier csv pour mettre dans une base de donnée */
     fun dlToBDD(fName: String){
         val file = File(application.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fName)
-        if (!file.exists()) {
+        if (!file.exists()) { /* On ne télécharge pas si le fichier n'existe pas */
             Log.d("url-file", "le fichier n'existe pas")
             return
         }
         val entreeStream = FileInputStream(file)
         val csvReader = CSVReaderBuilder(entreeStream.reader())
             .withCSVParser(CSVParserBuilder().withFieldAsNull(CSVReaderNullFieldIndicator.BOTH).build())
-            .build()
+            .build() // On créer le csvReader
         csvReader.use{ reader ->
-            reader.skip(1)
+            reader.skip(1) // On skip la première ligne
             val csvQuestions = reader.readAll().map { row ->
-                    try {
-                        Log.d("CSV_ROW", row.joinToString())
+                    try { // On lis chaque ligne, et on stock l'information dans
                         val id = row[0].toIntOrNull() ?: 0
                         val idJeuDeQuestions = row[1].toIntOrNull() ?: 0
                         val statut = row[4].toIntOrNull() ?: 0
@@ -137,7 +136,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
                         viewModelScope.launch(Dispatchers.IO){
                             data.insertQuestion(Question(id = id, idJeuDeQuestions = idJeuDeQuestions, question = row[2] ?: "", reponse = row[3] ?: "", statut = statut, prochainJour = prochainJour))
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Exception) { /* Mauvais fichier csv */
                         Log.e("CSV_READ_ERROR", "Error processing CSV row: $row", e)
                         null
                     }
@@ -207,27 +206,32 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
+    /*  ######### FONCTION DE REMPLISSAGE DE LA BDD ET DE RECUPERATION ##############*/
+
+    /* Charge les questions (string) depuis la BDD */
     fun loadQuestionsFromJDQ(n:String){
         viewModelScope.launch(Dispatchers.IO){
             qjdq = data.loadQuestionsFromJDQ(n)
         }
     }
 
+    /* Charge l'id du jeu de question à partir de son nom*/
     fun loadIdJDQ(n:String){
         viewModelScope.launch(Dispatchers.IO) {
             idJDQ = data.loadIdJDQ(n)
         }
     }
 
+    /* Fonction qui remplis la base de donnée de Thème */
     fun remplissageThemes(){
-        val entreeStream = application.resources.openRawResource(R.raw.theme)
+        val entreeStream = application.resources.openRawResource(R.raw.theme) // On ouvre le fichier theme.csv
         val csvReader = CSVReaderBuilder(entreeStream.reader())
             .withCSVParser(CSVParserBuilder().withFieldAsNull(CSVReaderNullFieldIndicator.BOTH).build())
-            .build()
+            .build() // on créer un csvReader pour lire le fichier
         csvReader.use{ reader ->
-            reader.skip(1)
+            reader.skip(1) // On skip la première ligne contenant les indications de remplissage
             val csvThemes = reader.readAll().map { row ->
-                Theme(nom = row[0])
+                Theme(nom = row[0]) // Puis on remplis ligne par ligne dans les bonnes colonnes
             }
             viewModelScope.launch(Dispatchers.IO){
                 data.insertThemesList(csvThemes.map{ it.toTheme()})
@@ -239,6 +243,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         return Theme(nom = this.nom)
     }
 
+    /* De même que la fonction précédente, mais avec les JDQ */
     fun remplissageJDQ(){
         val entreeStream = application.resources.openRawResource(R.raw.jeudequestions)
         val csvReader = CSVReaderBuilder(entreeStream.reader())
@@ -260,6 +265,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         return JeuDeQuestions(id = this.id, nom = this.nom, nomTheme = this.nomTheme)
     }
 
+    /* De même que la fonction précédente, mais avec les Questions */
     fun remplissageQuestions(){
         val entreeStream = application.resources.openRawResource(R.raw.question)
         val csvReader = CSVReaderBuilder(entreeStream.reader())
@@ -284,17 +290,20 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         return Question(id = this.id, idJeuDeQuestions = this.idJeuDeQuestions, question = this.question, reponse = this.reponse, statut = this.statut, prochainJour = this.prochainJour)
     }
 
+    /* Ajoute une question à la base de donnée */
     fun addNewQuestion(question : String, reponse : String, idJDQ : Int){
         viewModelScope.launch(Dispatchers.IO){
             data.insertQuestion(Question(id = 0, idJeuDeQuestions =  idJDQ,question =question, reponse = reponse))
+            // id 0 car autoIncrement, puis le reste des informations sont fournis par l'utilisateur
         }
     }
-
+    /* Récupération la liste de question à partir d'une liste de questions  */
     suspend fun getQuestionsByContent(questions : List<String>) : List<Question>{
         return data.getQuestionsByContent(questions)
 
     }
 
+    /*Suppression d'une liste de questions */
     fun deleteQuestions(questions : List<String>){
         viewModelScope.launch(Dispatchers.IO){
             val questionsSuppr = getQuestionsByContent(questions)
@@ -302,16 +311,19 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
+    /* Suppression d'une seule question */
     fun deleteSingleQuestion(question : Question){
         viewModelScope.launch(Dispatchers.IO){
             data.deleteQuestion(question)
         }
     }
 
+    /* Retourne le JeuDeQuestions associé à un nom */
     suspend fun getJDQByName(jdq : String) : JeuDeQuestions{
         return data.getJDQbyName(jdq)
     }
 
+    /* Supprime un jeu de questions */
     fun deleteJDQ(jdq : String){
         viewModelScope.launch(Dispatchers.IO){
             val jdqSuppr = getJDQByName(jdq)
@@ -319,19 +331,21 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
+    /* Rajoute un jeu de questions à la base de donnée */
     fun newJDQ(theme : String, jdq : String){
         viewModelScope.launch(Dispatchers.IO){
             data.insertJeuDeQuestions(JeuDeQuestions(id = 0,jdq,theme))
         }
     }
 
+    /* Charge les questions pour le jeu */
     fun loadQuestions() {
         viewModelScope.launch(Dispatchers.IO) {
             loadQuestions = data.getNbrQuestionsFromJDQ(jdqGame.value, nbQuestion.value)
         }
     }
 
-
+    /* Charge la prochaine question */
     fun loadNextQuestions(){
         viewModelScope.launch(Dispatchers.IO){
             loadQuestions.collect { questions ->
@@ -342,25 +356,31 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
-    fun verifRep(repUser : String, repQ : String, idQ : Int){
+    /* ################ FONCTION DE JEU ################### */
 
+    /* Fonction qui vérifie si la réponse de l'utilisateur correspond bien à celle attendu */
+    fun verifRep(repUser : String, repQ : String, idQ : Int){
         if (repUser == repQ) {
             bonneRep = true
-
-
         } else {
             bonneRep = false
             this.badRep.value++
         }
     }
+    /* Fonction qui augmente le statut d'une question après qu'elle est été bien répondu, ou que le joueur
+    la modifie par lui même. Modifie aussi la valeur du prochainJour, pour qu'on puisse la jouer dans un certains
+    nombre de jour.
+     */
     suspend fun incrementQuestion(idQ : Int){
         val q = this.data.getQuestion(idQ)
         q.statut = q.statut + 1
-        q.prochainJour = /*(q.statut-1).toDouble().pow(2).toInt()*/ 2.0.pow(q.statut - 1).toInt()
-
+        q.prochainJour = 2.0.pow(q.statut - 1).toInt()
         data.updateQuestion(q)
     }
 
+    /* De même que la précédente, seulement celle ci met à 1 le statut de la question. Modifie également
+    quand elle sera jouable la prochaine fois.
+     */
     suspend fun decrementQuestion(idQ : Int){
         val q = this.data.getQuestion(idQ)
         if(q.statut > 1){
@@ -370,15 +390,17 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         data.updateQuestion(q)
     }
 
+    /* Fonction qui met à jour le statut par la valeur que lui a donné l'utilisateur. Semblable a incrementQuestion */
     fun updateStatutQuestion(question : Question,statut : Int){
         viewModelScope.launch(Dispatchers.IO) {
             question.statut = statut
-            question.prochainJour = /*(question.statut-1).toDouble().pow(2).toInt()*/2.0.pow(statut - 1).toInt()
+            question.prochainJour = 2.0.pow(statut - 1).toInt()
 
             data.updateQuestion(question)
         }
     }
 
+    /*Fonction qui commence le timer de jeu, par la valeur tempsRestant */
     fun startTimer(){
         timer = object : CountDownTimer(tempsRestant.value, 1000){
             override fun onTick(millisUntilFinished: Long) {
@@ -389,11 +411,13 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
             }
 
             override fun onFinish() {
-                questionNonRep()
+                questionNonRep() /* Si le timer est fini, alors on lance la fonction qui gère
+                quand un joueur n'a pas répondu */
             }
         }.start()
     }
 
+    /* Fonction qui recommence le timer de sa valeur initial */
     fun resetTimer(){
         timer?.cancel()
         tempsRestant.value = tempsInitial.value
@@ -402,53 +426,56 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
         }
     }
 
+    /* Fonction qui arrête complètement le timer, sans le relancer */
     fun cancelTimer(){
         timer?.cancel()
         tempsRestant.value = tempsInitial.value
     }
 
+    /* Fonction qui lance la procédure quand un joueur ne répond pas à la question */
     fun questionNonRep(){
-
+        // On incrémente le nombre de mauvaises réponses, et le nombre de réponses
         badRep.value = badRep.value + 1
         nbrQuestionRep.value = nbrQuestionRep.value + 1
+        // On lance la fonction pour décrémenter le statut de la question
         viewModelScope.launch(Dispatchers.IO){
             decrementQuestion(questionActuelle.id)
         }
-        if (nbQuestion.value == nbrQuestionRep.value){
+        if (nbQuestion.value == nbrQuestionRep.value){ // Si il n'y a plus de questions, on arrête le jeu
             finJeu()
-        } else {
+        } else { // Sinon, on charge la prochaine question
             loadNextQuestions()
         }
     }
 
+    /* Fonction qui lance la procédure quand un joueur répond à la question */
     fun questionRep(repUser : String, idQ : Int){
 
+        // On vérifie la réponse de l'utilisateur
         questionActuelle?.reponse?.let { verifRep(repUser, it, idQ) }
-        nbrQuestionRep.value = nbrQuestionRep.value + 1
-        if(bonneRep){
+        nbrQuestionRep.value = nbrQuestionRep.value + 1 // On incrémente le nombre de questions
+        if(bonneRep){ //Si c'est une bonne réponse, on augmente le statut
             viewModelScope.launch(Dispatchers.IO){
                 incrementQuestion(idQ)
             }
-        } else {
+        } else { // Sinon on le diminue
             viewModelScope.launch(Dispatchers.IO){
                 decrementQuestion(idQ)
             }
         }
-        if (nbQuestion.value == nbrQuestionRep.value){
+        if (nbQuestion.value == nbrQuestionRep.value){ //Si il n'y a plus de question, on arrête
             finJeu()
-        } else {
+        } else { // Sinon on charge la suivante
             loadNextQuestions()
         }
     }
 
-
+    /* Fonction qui arrête le eu */
     fun finJeu(){
-        cancelTimer()
-        gameFinished = true
-        Log.d("AJOUT STATS :","${idjdqGame.value} | ${nbQuestion.value} |${jdqGame.value}| ${nbQuestion.value - badRep.value}")
-
+        cancelTimer() // On stop le timer
+        gameFinished = true //On modifie le boolean qui indique à l'activity si c'est fini ou non
         viewModelScope.launch(Dispatchers.IO) {
-
+        //On ajoute les statistiques de la partie à la BDD
         data.insertStatistique(Statistique(id = 0,
                 idjdqGame.value,
                 jdqGame.value,
@@ -457,7 +484,7 @@ class GameModel(private val application: Application) : AndroidViewModel (applic
             ))
         }
     }
-
+    /* Fonction qui commence un jeu */
     fun startJeu(){
         this.nbrQuestionRep.value = 0
         tempsRestant.value = tempsInitial.value

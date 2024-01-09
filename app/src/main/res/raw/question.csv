@@ -148,3 +148,48 @@ id,idJeuDeQuestions,question,reponse,statut,prochainJour
 146,4,8 x 4,32,1,1
 147,4,9 x 4,36,1,1
 148,4,10 x 4,40,1,1
+149,7,Déclaration d'Indépendance des États-Unis?,1776-07-04,1,1
+150,7,Révolution française?,1789,1,1
+151,7,Début Première Guerre mondiale?,1914-07-28,1,1
+152,7,Fin de la Seconde Guerre mondiale en Europe?,1945-05-08,1,1
+153,7,Quand a été signée la Déclaration universelle des droits de l'homme?,1948-12-10,1,1
+154,7,Début Guerre de Sécession aux États-Unis?,1861-1865,1,1
+155,7,Quand a été posée la première pierre du mur de Berlin?,1961-08-13,1,1
+156,7,Fondation de l'ONU?,1945-10-24,1,1
+157,7,Durant quelle siècle a eu lieu la Révolution industrielle en Grande-Bretagne?,18e siècle,1,1
+158,7,Quand a été signé le traité de Versailles mettant fin à la Première Guerre mondiale?,1919-06-28,1,1
+159,7,Assassinat de Martin Luther King Jr.?,1968-04-04,1,1
+160,7,En quelle année l'homme a-t-il marché sur la lune pour la première fois?,1969-07-20,1,1
+161,7,Quand a été adoptée la Constitution des États-Unis?,1787,1,1
+162,7,Quelle est la date de la chute du mur de Berlin?,1989-11-09,1,1
+163,7,En quelle année a eu lieu la révolution russe?,1917,1,1
+164,6,Quand a été peint le "Mona Lisa" par Leonardo da Vinci?,1503-1506,1,1
+165,6,En quelle année Vincent van Gogh a-t-il peint "La Nuit étoilée"?,1889,1,1
+166,6,Quand a été créé le tableau "Les Tournesols" de Vincent van Gogh?,1888,1,1
+167,6,Quelle est la date de naissance de Pablo Picasso?,1881-10-25,1,1
+168,6,En quelle année Claude Monet a-t-il peint "Impression, soleil levant"?,1872,1,1
+169,6,Quand a été achevée la fresque de la Chapelle Sixtine par Michel-Ange?,1512,1,1
+170,6,Quelle est la date de naissance de Frida Kahlo?,1907-07-06,1,1
+171,6,En quelle année a été peint "Les Demoiselles d'Avignon" par Pablo Picasso?,1907,1,1
+172,6,Quand a été créé le tableau "La Nuit étoilée" par Vincent van Gogh?,1889,1,1
+173,6,Quelle est la date de naissance de Salvador Dalí?,1904-05-11,1,1
+174,6,En quelle année a été achevée la fresque "La Cène" de Leonardo da Vinci?,1498,1,1
+175,6,Quand a été peint "Guernica" par Pablo Picasso?,1937,1,1
+176,6,Quelle est la date de naissance de Rembrandt?,1606-07-15,1,1
+177,6,En quelle année a été achevée "La Jeune Fille à la perle" de Johannes Vermeer?,1665,1,1
+178,6,Quand a été peint "Les Nymphéas" de Claude Monet?,1919,1,1
+179,8,Conjuguez le verbe "manger" à la première personne du singulier au passé composé.,J'ai mangé,1,1
+180,8,À quelle personne du singulier correspond la forme conjuguée "tu danses"?,Deuxième personne,1,1
+181,8,Conjuguez le verbe "avoir" à la troisième personne du pluriel au futur simple.,Ils auront,1,1
+182,8,Quelle est la forme négative correcte de "nous parlons" au présent de l'indicatif?,Nous ne parlons pas,1,1
+183,8,Conjuguez le verbe "être" à l'imparfait de l'indicatif à la deuxième personne du singulier.,Tu étais,1,1
+184,8,À quel temps est conjugué le verbe "voyager" dans la phrase "Ils voyageront demain."?,Futur simple,1,1
+185,8,Conjuguez le verbe "finir" à la première personne du pluriel au passé composé.,Nous avons fini,1,1
+186,8,Quelle est la forme interrogative correcte de "il chante" au présent de l'indicatif?,Chante-t-il,1,1
+187,8,Conjuguez le verbe "partir" à la deuxième personne du singulier à l'impératif., Pars,1,1
+188,8,À quelle personne du pluriel correspond la forme conjuguée "vous dansez"?,Deuxième personne,1,1
+189,8,Conjuguez le verbe "aller" à la troisième personne du singulier au passé simple.,Il alla,1,1
+190,8,Quelle est la forme négative correcte de "nous sommes" au présent de l'indicatif?,Nous ne sommes pas,1,1
+191,8,Conjuguez le verbe "prendre" à la première personne du singulier au futur proche.,Je vais prendre,1,1
+192,8,À quel mode est conjugué le verbe "pouvoir" dans la phrase "Elle pourrait le faire."?,Conditionnel,1,1
+193,8,Conjuguez le verbe "venir" à la troisième personne du pluriel au présent de l'indicatif.,Ils viennent,1,1
